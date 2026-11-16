@@ -44,6 +44,26 @@ DENY_NAMES = ("mi.token", "token.json", "device_id")
 DENY_PARTS = ("__pycache__", ".git", ".venv", "node_modules", "updates")
 
 
+# GitHub 官方下载/资产域名。Release 资产会 302 到 CDN，且 CDN 子域会变
+# （历史上用过 objects./github-releases.，现又新增 release-assets.），
+# 因此除精确主机外，额外放行 *.githubusercontent.com —— 该二级域为 GitHub
+# 专有，第三方无法注册其子域，不会引入 github.com.evil.com 这类钓鱼风险。
+GITHUB_DOWNLOAD_HOSTS = {
+    "github.com",
+    "codeload.github.com",
+}
+GITHUB_CDN_SUFFIX = ".githubusercontent.com"
+
+
+def _download_host_ok(host: str, api_host: str = "") -> bool:
+    host = (host or "").lower().rstrip(".")
+    if not host:
+        return False
+    if host in GITHUB_DOWNLOAD_HOSTS or host == api_host:
+        return True
+    return host.endswith(GITHUB_CDN_SUFFIX)
+
+
 class UpdateError(Exception):
     """升级过程中的可预期失败，消息可直接展示给用户。"""
 
@@ -170,12 +190,8 @@ def _safe_download(url: str, dest: str, expect_size: int = 0) -> None:
     if p.scheme != "https":
         raise UpdateError("升级包 URL 必须是 https")
     host = (p.hostname or "").lower()
-    allowed_hosts = {"github.com", "objects.githubusercontent.com",
-                     "github-releases.githubusercontent.com"}
     api_host = (urlparse(config.UPDATE_API).hostname or "").lower()
-    if api_host:
-        allowed_hosts.add(api_host)
-    if host not in allowed_hosts:
+    if not _download_host_ok(host, api_host):
         raise UpdateError("升级包下载地址不在允许清单内：%s" % host)
 
     req = urllib.request.Request(url)
@@ -189,7 +205,7 @@ def _safe_download(url: str, dest: str, expect_size: int = 0) -> None:
                 open(tmp, "wb") as f:
             # GitHub 会把下载 302 到 CDN，跟随重定向后再校验一次最终主机
             final_host = (urlparse(r.geturl()).hostname or "").lower()
-            if final_host not in allowed_hosts:
+            if not _download_host_ok(final_host, api_host):
                 raise UpdateError("升级包被重定向到不允许的主机：%s" % final_host)
             declared = r.headers.get("Content-Length")
             cap = config.UPDATE_MAX_BYTES

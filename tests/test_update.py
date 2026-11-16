@@ -147,7 +147,8 @@ finally:
 old_asset_prefix = config.UPDATE_ASSET_PREFIX
 try:
     for bad in ["http://github.com/x.zip", "https://evil.com/x.zip",
-                "https://github.com.evil.com/x.zip"]:
+                "https://github.com.evil.com/x.zip",
+                "https://githubusercontent.com.evil.com/x.zip"]:
         try:
             U._safe_download(bad, os.path.join(tempfile.gettempdir(), "never.zip"))
             ok(False, "拒绝不安全下载地址 %s" % bad)
@@ -155,6 +156,16 @@ try:
             ok(True, "拒绝不安全下载地址 %s" % bad)
 finally:
     config.UPDATE_ASSET_PREFIX = old_asset_prefix
+
+# 6b. GitHub 资产 CDN 域名放行（真实下载会 302 到这些主机）
+for good in ["github.com", "objects.githubusercontent.com",
+             "github-releases.githubusercontent.com",
+             "release-assets.githubusercontent.com", "codeload.github.com"]:
+    ok(U._download_host_ok(good), "放行 GitHub 资产域名 %s" % good)
+for bad in ["evil.com", "github.com.evil.com", "notgithubusercontent.com",
+            "githubusercontent.com.evil.com", ""]:
+    ok(not U._download_host_ok(bad), "拒绝仿冒域名 %s" % bad)
+ok(U._download_host_ok("api.github.com", "api.github.com"), "放行自建 API 主机")
 
 # ---------------------------------------------------------------- 7. HTTP 接口
 config.UPDATE_REPO = ""   # 测「未配置」分支
