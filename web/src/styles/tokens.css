@@ -1,0 +1,284 @@
+/* ============================================================
+   设计令牌 · 哑光石墨（Matte Graphite）
+   ------------------------------------------------------------
+   unslop 九 passes 之后全站颜色、圆角、深度、字色、动效的唯一来源。
+   世界取自家庭配电箱与夜间客厅的仪表面板：所有表面、描边与文字
+   共用一条带一点暖灰的中性色阶；强调色只有一条，且只出现在
+   主操作、选择位与两处数据时刻（设备读数曲线 / 天气 24 小时曲线）。
+   令牌名、类名、七层顺序、7 套预设机制与 ①-⑥ 完全一致。
+   规格说明见根目录 DESIGN.md。
+   ============================================================ */
+
+:root {
+  font-family: "SF Pro Display", "SF Pro Text", "PingFang SC", -apple-system, BlinkMacSystemFont, "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  font-synthesis: none;
+  color-scheme: light;
+
+  /* 字色只有三档。四个名字只是为了兼容既有组件 */
+  --ink: #1c1b19;
+  --ink-muted: #56554f;
+  --ink-soft: #74736d;
+  --ink-faint: #74736d;
+  --leaf-text: #36704a;
+
+  /* 单一强调色。7 套预设会在文件末尾派生覆盖 --blue */
+  --blue: #2f6bff;
+  --blue-hover: #1e54dd;
+  --blue-soft: rgba(47, 107, 255, .08);
+  --lime: #3f7d52;
+  --lime-soft: rgba(63, 125, 82, .12);
+  --red: #b9423b;
+  --red-text: #a63b34;
+  --red-soft: rgba(185, 66, 59, .09);
+  --focus: rgba(47, 107, 255, .75);
+
+  /* 圆角按 4px 分级。胶囊只留给真正的开关轨道与圆点 */
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+
+  /* 描边统一是中性墨色 8% 到 16% 的安静发丝线 */
+  --shade: 44, 42, 38;
+  --line: rgba(var(--shade), .10);
+  --line-strong: rgba(var(--shade), .16);
+  --glass-line: rgba(var(--shade), .12);
+  --glass-line-soft: rgba(var(--shade), .08);
+
+  /* 深度只由中性软阴影与表面台阶表达，没有彩色投影 */
+  --e1: 0 1px 2px rgba(var(--shade), .06);
+  --e2: 0 1px 2px rgba(var(--shade), .07), 0 8px 20px rgba(var(--shade), .06);
+  --e3: 0 1px 2px rgba(var(--shade), .08), 0 16px 40px rgba(var(--shade), .10);
+  --e-accent: 0 1px 2px rgba(var(--shade), .06);
+  --e-accent-hover: 0 1px 2px rgba(var(--shade), .07), 0 8px 20px rgba(var(--shade), .06);
+  --e-danger: 0 1px 2px rgba(var(--shade), .06);
+  --edge: 0 0 0 0 transparent;
+  --edge-strong: 0 0 0 0 transparent;
+
+  /* 场景面全部实色，无渐变、无玻璃模糊、无光晕 */
+  --stage: #f2f1ee;
+  --frame: #1c1b19;
+  --canvas: #faf9f7;
+  --rail-bg: #f7f6f3;
+  --pill-bg: #ffffff;
+  --pill-inset: 0 0 0 0 transparent;
+  --float-bg: #ffffff;
+  --float-inset: 0 0 0 0 transparent;
+  /* 浮层玻璃：只给浮在内容之上的层（顶栏、抽屉、下拉、外观面板、提示）。
+     阅读面（卡片、表格、面板）仍是实色，玻璃不进内容区。 */
+  --glass-bg: rgba(250, 249, 247, .66);
+  --glass-bg-strong: rgba(250, 249, 247, .70);
+  --glass-rail: rgba(247, 246, 243, .74);
+  --glass-head: rgba(250, 249, 247, .90);
+  --glass-menu: rgba(250, 249, 247, .97);
+  --glass-hi: rgba(255, 255, 255, .72);
+  --glass-blur: 22px;
+  --glass-sat: 1.4;
+  --surface: #ffffff;
+  --surface-solid: #ffffff;
+  --groove-bg: #f1f0ec;
+  --groove-inset: 0 0 0 0 transparent;
+  --input-bg: #ffffff;
+  --hover-bg: rgba(var(--shade), .045);
+  --press-bg: rgba(var(--shade), .075);
+  --overlay: rgba(18, 18, 16, .30);
+  --dark-surface: #1a1a19;
+
+  /* 仪器化排版。等宽只给读数与元信息，小字不加负字距 */
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --fs-display-xl: 32px;
+  --fs-display-l: 28px;
+  --fs-display-m: 22px;
+  --track-eyebrow: 0;
+
+  /* 斜线填充只承载「范围」语义，是中性纹理不是装饰 */
+  --hatch-ink: rgba(var(--shade), .10);
+  --hatch: repeating-linear-gradient(135deg, var(--hatch-ink) 0 1px, transparent 1px 6px);
+
+  --tick: rgba(var(--shade), .22);
+  --tick-strong: rgba(var(--shade), .45);
+
+  /* 类别只用中性台阶区分，不引入任何色相 */
+  --cat-1-bg: #eceae5; --cat-1-ink: #56554f;
+  --cat-2-bg: #e6e5e0; --cat-2-ink: #56554f;
+  --cat-3-bg: #efeeea; --cat-3-ink: #56554f;
+  --cat-4-bg: #e9e8e3; --cat-4-ink: #56554f;
+  --cat-5-bg: #e3e2dd; --cat-5-ink: #56554f;
+
+  /* 环境光退休。保留令牌名避免组件层改动 */
+  --ambient-a: transparent;
+  --ambient-b: transparent;
+
+  /* 关系图连线与节点底：中性台阶 + 一条强调线 */
+  --thread: rgba(var(--shade), .18);
+  --thread-active: rgba(47, 107, 255, .55);
+  --pulse-halo: rgba(47, 107, 255, .10);
+  --node-bg: #ffffff;
+  --graph-1: 120, 118, 112;
+  --graph-2: 104, 103, 98;
+  --graph-3: 138, 136, 130;
+  --graph-4: 90, 89, 85;
+  --graph-5: 154, 152, 146;
+  --graph-ink: 44, 42, 38;
+  --graph-accent: 47, 107, 255;
+  --graph-lime: 63, 125, 82;
+  --graph-danger: 166, 59, 52;
+  --graph-paper: 255, 255, 255;
+
+  /* 全站一条缓动曲线、两档时长 */
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --t-fast: 140ms;
+  --t-slow: 240ms;
+
+  /* 布局尺寸：侧栏 256、顶栏 56、内容上限 1520（App.vue） */
+  --rail-w: 256px;
+  --topbar-h: 56px;
+  --layer-overlay: 200;
+  --layer-toast: 400;
+  --control-h: 36px;
+  --control-h-sm: 32px;
+
+  /* 表格密度（由外观设置切换） */
+  --row-h: 48px;
+  --cell-px: 16px;
+}
+
+:root[data-density="comfy"]   { --row-h: 56px; --cell-px: 18px; }
+:root[data-density="compact"] { --row-h: 40px; --cell-px: 14px; }
+
+/* ── 深色外观：同一条中性色阶的深色段 ─────────────────────────── */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ink: #e9e8e3;
+  --ink-muted: #aaa9a2;
+  --ink-soft: #86857e;
+  --ink-faint: #86857e;
+  --leaf-text: #8ec4a0;
+
+  --blue: #6d9bff;
+  --blue-hover: #90b3ff;
+  --blue-soft: rgba(109, 155, 255, .14);
+  --lime-soft: rgba(63, 125, 82, .18);
+  --red-text: #e58a83;
+  --red-soft: rgba(185, 66, 59, .18);
+  --focus: rgba(109, 155, 255, .80);
+
+  --shade: 0, 0, 0;
+  --line: rgba(255, 255, 255, .08);
+  --line-strong: rgba(255, 255, 255, .14);
+  --glass-line: rgba(255, 255, 255, .10);
+  --glass-line-soft: rgba(255, 255, 255, .07);
+
+  --e1: 0 1px 2px rgba(0, 0, 0, .40);
+  --e2: 0 1px 2px rgba(0, 0, 0, .40), 0 8px 20px rgba(0, 0, 0, .30);
+  --e3: 0 1px 2px rgba(0, 0, 0, .44), 0 16px 40px rgba(0, 0, 0, .40);
+  --e-accent: 0 1px 2px rgba(0, 0, 0, .40);
+  --e-accent-hover: 0 1px 2px rgba(0, 0, 0, .40), 0 8px 20px rgba(0, 0, 0, .30);
+  --e-danger: 0 1px 2px rgba(0, 0, 0, .40);
+  --edge: 0 0 0 0 transparent;
+  --edge-strong: 0 0 0 0 transparent;
+
+  --stage: #141412;
+  --frame: #000000;
+  --canvas: #191816;
+  --rail-bg: #100f0e;
+  --pill-bg: #201f1c;
+  --pill-inset: 0 0 0 0 transparent;
+  --float-bg: #201f1c;
+  --float-inset: 0 0 0 0 transparent;
+  --glass-bg: rgba(28, 27, 24, .64);
+  --glass-bg-strong: rgba(28, 27, 24, .74);
+  --glass-rail: rgba(16, 15, 14, .76);
+  --glass-head: rgba(28, 27, 24, .92);
+  --glass-menu: rgba(28, 27, 24, .96);
+  --glass-hi: rgba(255, 255, 255, .08);
+  --glass-blur: 24px;
+  --glass-sat: 1.15;
+  --surface: #1c1b18;
+  --surface-solid: #1c1b18;
+  --groove-bg: #242320;
+  --groove-inset: 0 0 0 0 transparent;
+  --input-bg: #232220;
+  --hover-bg: rgba(255, 255, 255, .05);
+  --press-bg: rgba(255, 255, 255, .08);
+  --overlay: rgba(0, 0, 0, .62);
+
+  --hatch-ink: rgba(255, 255, 255, .10);
+  --tick: rgba(255, 255, 255, .16);
+  --tick-strong: rgba(255, 255, 255, .40);
+
+  --cat-1-bg: rgba(255, 255, 255, .06); --cat-1-ink: #b8b6ae;
+  --cat-2-bg: rgba(255, 255, 255, .06); --cat-2-ink: #b8b6ae;
+  --cat-3-bg: rgba(255, 255, 255, .06); --cat-3-ink: #b8b6ae;
+  --cat-4-bg: rgba(255, 255, 255, .06); --cat-4-ink: #b8b6ae;
+  --cat-5-bg: rgba(255, 255, 255, .06); --cat-5-ink: #b8b6ae;
+
+  --ambient-a: transparent;
+  --ambient-b: transparent;
+
+  --thread: rgba(255, 255, 255, .14);
+  --thread-active: rgba(109, 155, 255, .60);
+  --pulse-halo: rgba(109, 155, 255, .16);
+  --node-bg: #201f1c;
+  --graph-1: 184, 182, 174;
+  --graph-2: 168, 166, 158;
+  --graph-3: 200, 198, 190;
+  --graph-4: 152, 150, 144;
+  --graph-5: 216, 214, 206;
+  --graph-ink: 233, 232, 227;
+  --graph-accent: 109, 155, 255;
+  --graph-lime: 142, 196, 160;
+  --graph-danger: 229, 138, 131;
+  --graph-paper: 32, 31, 28;
+}
+
+/* 需要被连续补间的自定义属性必须注册，inherits: false 避免打脏后代 */
+@property --fill { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+
+/* ============================================================
+   本项目扩展：7 套色彩预设 × 浅 / 深 × 自定义主色
+   ------------------------------------------------------------
+   预设机制与色值完全保留，用户偏好不因视觉收敛而丢失。
+   预设只决定「唯一强调色」是哪一条，不再把颜色铺到表面、
+   描边、阴影或类别标识上。自定义主色（data-preset="custom"）
+   由 stores/theme.ts 现场推导，以 inline style 写在根元素上。
+   ============================================================ */
+
+/* 预设表：每套只给主色、hover 色、RGB 三元组，其余统一派生 */
+html[data-preset="blue"]   { --tone: #2f6bff; --tone-hover: #1e54dd; --tone-rgb: 47 107 255; }
+html[data-preset="mint"]   { --tone: #0ca678; --tone-hover: #098a64; --tone-rgb: 12 166 120; }
+html[data-preset="violet"] { --tone: #7048e8; --tone-hover: #5f3ad1; --tone-rgb: 112 72 232; }
+html[data-preset="coral"]  { --tone: #f76707; --tone-hover: #e8590c; --tone-rgb: 247 103 7; }
+html[data-preset="rose"]   { --tone: #e64980; --tone-hover: #d6336c; --tone-rgb: 230 73 128; }
+html[data-preset="cyan"]   { --tone: #0b7285; --tone-hover: #095c6c; --tone-rgb: 11 114 133; }
+html[data-preset="amber"]  { --tone: #e8930c; --tone-hover: #d97e06; --tone-rgb: 232 147 12; }
+
+html[data-theme="dark"][data-preset="blue"]   { --tone: #6d9bff; --tone-hover: #90b3ff; --tone-rgb: 109 155 255; }
+html[data-theme="dark"][data-preset="mint"]   { --tone: #38d9a9; --tone-hover: #63e4bd; --tone-rgb: 56 217 169; }
+html[data-theme="dark"][data-preset="violet"] { --tone: #9775fa; --tone-hover: #b39bfc; --tone-rgb: 151 117 250; }
+html[data-theme="dark"][data-preset="coral"]  { --tone: #ff922b; --tone-hover: #ffa94d; --tone-rgb: 255 146 43; }
+html[data-theme="dark"][data-preset="rose"]   { --tone: #faa2c1; --tone-hover: #fcc2d7; --tone-rgb: 250 162 193; }
+html[data-theme="dark"][data-preset="cyan"]   { --tone: #3bc9db; --tone-hover: #66d9e8; --tone-rgb: 59 201 219; }
+html[data-theme="dark"][data-preset="amber"]  { --tone: #fcc419; --tone-hover: #fdd835; --tone-rgb: 252 196 25; }
+
+/* 统一派生：浅色态 */
+html[data-preset]:not([data-preset="custom"]) {
+  --blue: var(--tone);
+  --blue-hover: var(--tone-hover);
+  --blue-soft: rgb(var(--tone-rgb) / .08);
+  --focus: rgb(var(--tone-rgb) / .8);
+  /* 旧令牌别名：Sparkline 与旧组件迁移期平滑过渡 */
+  --accent: var(--tone);
+  --accent-strong: var(--tone-hover);
+  --accent-soft: rgb(var(--tone-rgb) / .08);
+  --accent-soft-2: rgb(var(--tone-rgb) / .18);
+}
+/* 统一派生：深色态（透明度按深色配方上调） */
+html[data-theme="dark"][data-preset]:not([data-preset="custom"]) {
+  --blue-soft: rgb(var(--tone-rgb) / .14);
+  --focus: rgb(var(--tone-rgb) / .85);
+  --accent-soft: rgb(var(--tone-rgb) / .13);
+  --accent-soft-2: rgb(var(--tone-rgb) / .24);
+}

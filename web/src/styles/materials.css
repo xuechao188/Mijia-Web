@@ -1,0 +1,95 @@
+/* ============================================================
+   第 3 层 · 材质：实色表面台阶 + 浮层玻璃
+   ------------------------------------------------------------
+   层级由「背景台阶 + 发丝线 + 中性软阴影」拉开；只有真正浮在
+   内容之上的一层（顶栏、抽屉、下拉、外观面板、提示）用玻璃：
+   半透明底 + backdrop-filter 模糊 + 一条内高光。阅读面（卡片、
+   表格、面板）保持实色，读数不为磨砂质感让路。
+   ============================================================ */
+
+/* 1. 导航轨：全场最深的一层实色面 */
+.m-rail {
+  background: var(--rail-bg);
+}
+
+/* 2. 高亮块（导航选中、分段滑块、次级按钮）：浅一档的实色面 */
+.m-pill {
+  border: 1px solid var(--line);
+  background: var(--pill-bg);
+  box-shadow: none;
+}
+
+/* 3. 浮层（下拉、抽屉、提示）：抬起的实色面 + 中性阴影 */
+.m-float {
+  border: 1px solid var(--line-strong);
+  background: var(--float-bg);
+  box-shadow: var(--e3);
+}
+
+/* 3b. 浮层玻璃：半透明底 + 背景模糊 + 上沿内高光。
+   只在浮于内容之上的元素上使用；四档浓度对应不同距离
+   ——顶栏取中间值，外观面板与抽屉最厚，下拉/提示最轻，
+   逐行读的菜单（家庭、筛选）用最实的一档。 */
+.m-glass,
+.m-glass-strong,
+.m-glass-rail,
+.m-glass-menu {
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  border: 1px solid var(--glass-line);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--e3);
+}
+.m-glass { background: var(--glass-bg); }
+.m-glass-strong { background: var(--glass-bg-strong); }
+.m-glass-rail {
+  background: var(--glass-rail);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--e2);
+}
+/* 菜单常压在读数上（窄屏顶栏的家庭下拉就盖着统计条），
+   所以取接近不透明的一档：留一点模糊，但不让底下的数字透上来 */
+.m-glass-menu { background: var(--glass-menu); }
+/* 不支持背景模糊时退回实色，宁可失去质感也不让文字糊在内容上 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .m-glass, .m-glass-rail, .m-glass-menu { background: var(--float-bg); }
+  .m-glass-strong { background: var(--surface-solid); }
+}
+
+/* 4. 阅读面（卡片、表格容器、面板）：标准卡片面 */
+.m-surface {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  box-shadow: var(--e1);
+}
+
+/* 槽：凹进去的一层，用来承托输入与分段控件 */
+.m-groove {
+  border: 1px solid var(--line);
+  background: var(--groove-bg);
+  box-shadow: none;
+}
+
+/* 指针光已移除。保留类名为兼容既有模板，不再产生任何视觉层 */
+.m-glow {
+  position: relative;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .m-rail, .m-pill, .m-float, .m-surface,
+  .m-glass, .m-glass-strong, .m-glass-rail, .m-glass-menu {
+    background: var(--surface-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .m-glow > .glow-layer { display: none; }
+}
+
+/* 主题切换扫光：盖住整页再淡出，让配色变化不是瞬跳。
+   只在切换的 400ms 内存在，不拦截任何指针事件。 */
+.theme-veil {
+  position: fixed; inset: 0; z-index: var(--layer-toast);
+  pointer-events: none; opacity: 0;
+  will-change: opacity;
+}

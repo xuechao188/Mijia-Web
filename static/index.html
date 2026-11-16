@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>米家Web版</title>
+<link rel="stylesheet" href="/static/vendor-pico.css?v=1">
+<link rel="stylesheet" href="/static/style.css?v=19">
+</head>
+<body class="logged-out">
+<div id="login-page">
+  <button id="lp-mode" title="切换浅色/深色">◐</button>
+  <div class="lp-card">
+    <div class="lp-brand">米家Web版</div>
+    <div class="lp-sub">登录小米账号，管理你的智能设备</div>
+    <div class="lp-tabs">
+      <button class="lp-tab active" data-tab="qr">扫码登录</button>
+      <button class="lp-tab" data-tab="pwd">账号密码</button>
+    </div>
+
+    <div id="lp-qr">
+      <div class="qr-frame" id="qr-frame">
+        <img id="qr-img" alt="登录二维码">
+        <div id="qr-overlay" class="qr-overlay hidden">
+          <div id="qr-overlay-text">二维码已过期</div>
+          <button id="qr-refresh">刷新二维码</button>
+        </div>
+      </div>
+      <div id="qr-status" class="qr-status">正在检查登录状态…</div>
+      <div class="qr-tip">打开「米家 App」或「小米账号 App」→ 扫一扫</div>
+    </div>
+
+    <div id="lp-pwd" class="hidden">
+      <input id="lu" type="text" placeholder="小米账号 / 手机号 / 邮箱" autocomplete="username">
+      <input id="lp" type="password" placeholder="密码" autocomplete="current-password">
+      <button id="btn-login" class="lp-login-btn">登 录</button>
+      <div id="login-msg" class="msg"></div>
+      <div id="otp-box" class="hidden">
+        <input id="otp" type="text" placeholder="输入验证码 / 二次验证">
+        <button id="btn-otp">提交验证码</button>
+      </div>
+    </div>
+
+    <div id="lp-cat-host"></div>
+  </div>
+</div>
+
+<div id="layout">
+  <aside id="sidebar">
+    <div class="side-head">
+      <input id="search" type="search" placeholder="搜索设备…">
+    </div>
+    <nav id="room-list"></nav>
+    <div class="side-foot">
+      <div id="login-state" class="side-login">未登录</div>
+      <button id="btn-theme" class="side-btn" title="主题与外观">主题</button>
+      <button id="btn-refresh" class="side-btn">刷新设备</button>
+      <button id="btn-logout" class="side-btn">退出登录</button>
+      <div id="theme-pop" class="hidden">
+        <div class="tp-title">外观模式</div>
+        <div class="tp-row">
+          <button class="tp-mode" data-mode="light">浅色</button>
+          <button class="tp-mode" data-mode="dark">深色</button>
+        </div>
+        <div class="tp-title">色彩预设</div>
+        <div class="tp-swatches">
+          <button class="sw" data-preset="blue"   style="--c:#2f6bff" title="米家蓝"></button>
+          <button class="sw" data-preset="mint"   style="--c:#0ca678" title="薄荷青"></button>
+          <button class="sw" data-preset="violet" style="--c:#7048e8" title="暮山紫"></button>
+          <button class="sw" data-preset="coral"  style="--c:#f76707" title="珊瑚橙"></button>
+          <button class="sw" data-preset="rose"   style="--c:#e64980" title="玫瑰粉"></button>
+          <button class="sw" data-preset="cyan"   style="--c:#0b7285" title="晴空青"></button>
+          <button class="sw" data-preset="amber"  style="--c:#e8930c" title="琥珀金"></button>
+          <label class="sw custom" title="自定义颜色">
+            <input type="color" id="accent-picker" value="#2f6bff">
+          </label>
+        </div>
+        <button id="tp-reset" class="tp-reset">恢复默认主题</button>
+      </div>
+    </div>
+  </aside>
+
+  <main id="main">
+    <nav id="main-tabs">
+      <button class="tab active" data-tab="devices" type="button">设备</button>
+      <button class="tab" data-tab="scenes" type="button">场景</button>
+      <button class="tab" data-tab="automations" type="button">自动化</button>
+      <button class="tab" data-tab="logs" type="button">日志</button>
+    </nav>
+    <section id="stat-strip" class="hidden"></section>
+
+    <section id="scene-panel" class="card hidden">
+      <h3>场景</h3>
+      <div id="scene-list" class="scene-row"></div>
+    </section>
+
+    <section id="automation-panel" class="card hidden">
+      <div class="auto-head">
+        <div class="auto-title">
+          自动化 <span id="auto-count" class="auto-count"></span>
+        </div>
+        <div class="auto-actions">
+          <button id="auto-new" class="panel-btn" type="button">新建</button>
+          <button id="auto-refresh" class="panel-btn" type="button">刷新</button>
+        </div>
+      </div>
+      <div id="auto-create" class="auto-create hidden">
+        <div class="auto-sec-title">新建自动化 · 复制现有自动化的触发、条件与动作</div>
+        <div class="auto-form-row">
+          <label for="auto-new-name">名称</label>
+          <input id="auto-new-name" class="text-input" type="text" maxlength="100"
+                 placeholder="例如：客厅 有人移动-开灯">
+        </div>
+        <div class="auto-form-row">
+          <label for="auto-new-template">模板</label>
+          <select id="auto-new-template" class="text-input"></select>
+        </div>
+        <div class="auto-form-row auto-form-check">
+          <label><input id="auto-new-enable" type="checkbox">
+            创建后立即启用（默认停用，不勾选更安全）</label>
+        </div>
+        <div class="auto-form-actions">
+          <button id="auto-create-preview" class="toggle-btn" type="button"
+              title="只在本地生成，不会创建">预览请求内容</button>
+          <button id="auto-create-submit" class="toggle-btn danger-btn" type="button">创建</button>
+        </div>
+        <pre id="auto-create-out" class="auto-payload"></pre>
+        <div class="dim-note">
+          创建会同步到米家 App 与家庭共享成员；删除不可撤销。
+        </div>
+      </div>
+      <div id="automation-list" class="auto-list hidden"></div>
+      <div id="auto-note" class="auto-note hidden">
+        支持改名、启停、新建与删除；写入均需二次确认，删除需手动输入完整名称复核。
+      </div>
+    </section>
+
+    <section id="device-grid" class="grid"></section>
+
+    <section id="event-panel" class="card">
+      <h3>事件流</h3>
+      <ul id="event-list"></ul>
+    </section>
+  </main>
+</div>
+
+<div id="drawer-mask" class="hidden"></div>
+<aside id="drawer" class="hidden">
+  <div class="drawer-head">
+    <h3 id="dr-name">设备</h3>
+    <button id="dr-close">✕</button>
+  </div>
+  <div id="dr-body"></div>
+</aside>
+
+<div id="toast" class="hidden"></div>
+<script src="/static/cards.js?v=5"></script>
+<script src="/static/camera_panel.js?v=1"></script>
+<script src="/static/groups.js?v=1"></script>
+<script src="/static/device_icons.js?v=1"></script>
+<script src="/static/card_types.js?v=6"></script>
+<script src="/static/weather_card.js?v=1"></script>
+<script src="/static/login_cat.js?v=2"></script>
+<script src="/static/app.js?v=19"></script>
+</body>
+</html>

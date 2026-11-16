@@ -1,0 +1,381 @@
+/* ============================================================
+   第 4 层 · 组件：按钮、输入、分段、标签、开关、提示
+   ------------------------------------------------------------
+   控件统一 8px 圆角，胶囊只留给开关轨道和状态圆点。
+   选中态是「一小步表面台阶 + 一条强调色发丝线」，不是填充块、
+   不是渐变、不是彩色投影。图标全部走 .ui-ico 一套 16px / 1.5 描边。
+   ============================================================ */
+
+/* 统一线性图标：一个尺寸、一条描边、跟随文字角色取色 */
+.ui-ico {
+  width: 16px; height: 16px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.5;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ── 按钮 ─────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; height: var(--control-h); padding: 0 16px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  background: var(--input-bg); color: var(--ink-muted);
+  font-size: 13px; font-weight: 500; white-space: nowrap;
+  transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease);
+}
+.btn:hover { color: var(--ink); border-color: var(--line-strong); background: var(--hover-bg); }
+.btn:active { background: var(--press-bg); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.btn.sm { height: var(--control-h-sm); padding: 0 12px; font-size: 12px; border-radius: var(--r-sm); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--ink-soft); }
+.btn.ghost:hover { background: var(--hover-bg); border-color: transparent; color: var(--ink); }
+.btn.active {
+  background: var(--blue-soft); border-color: var(--blue); color: var(--blue);
+  font-weight: 500;
+}
+.btn.active:hover { background: var(--blue-soft); border-color: var(--blue); color: var(--blue); }
+
+/* 一组分段控件：底是凹槽，选中项是浅一档的实色面 */
+.btn-group {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px;
+  border-radius: var(--r-sm);
+}
+.btn-group .btn { border-radius: var(--r-sm); }
+.btn-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.icon-btn {
+  display: inline-grid; place-items: center;
+  width: var(--control-h); height: var(--control-h);
+  border-radius: var(--r-sm); color: var(--ink-muted);
+  transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.icon-btn:hover { color: var(--ink); background: var(--hover-bg); }
+.icon-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ── 输入 ─────────────────────────────────────────────────────── */
+.field {
+  width: 100%; height: var(--control-h); min-width: 0;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  background: var(--input-bg); color: var(--ink);
+  font-size: 13px;
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.field::placeholder { color: var(--ink-faint); }
+.field:hover { border-color: var(--line-strong); }
+.field:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
+.field:focus-visible { outline: none; }
+.field[type="search"]::-webkit-search-cancel-button { cursor: pointer; }
+
+/* ── 顶部标签页 ───────────────────────────────────────────────── */
+.tabs { display: flex; align-items: center; gap: 4px; }
+.tab {
+  height: var(--control-h-sm); padding: 0 16px; border-radius: var(--r-sm);
+  border: 1px solid var(--line-strong); background: var(--input-bg);
+  color: var(--ink-soft); font-size: 13px;
+  /* 顶栏在 1000~1200 这一段里只剩几像素余量，标签一旦能被压缩就会把
+     「设备」折成两行；这里锁死不换行，让面包屑先让位。 */
+  white-space: nowrap; flex: 0 0 auto;
+  transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease);
+}
+.tab:hover { color: var(--ink); border-color: var(--line-strong); background: var(--hover-bg); }
+.tab.active {
+  background: var(--blue-soft); border-color: var(--blue); color: var(--blue);
+  font-weight: 500;
+}
+.tab:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* 未读数贴在标签里，用同一套强调色，不另起一个装饰性胶囊 */
+.tab-badge {
+  display: inline-block; margin-left: 6px; padding: 0 5px;
+  border-radius: var(--r-xs); background: var(--blue); color: #fff;
+  font-size: 10px; line-height: 15px; font-variant-numeric: tabular-nums;
+}
+
+/* ── 枚举快捷操作 ─────────────────────────────────────────────── */
+.chip {
+  padding: 4px 10px; border-radius: var(--r-xs);
+  border: 1px solid var(--line-strong); background: var(--input-bg);
+  color: var(--ink-soft); font-size: 12px;
+  transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease);
+}
+.chip:hover { color: var(--ink); border-color: var(--line-strong); background: var(--hover-bg); }
+.chip.active {
+  background: var(--blue-soft); border-color: var(--blue);
+  color: var(--blue); font-weight: 500;
+}
+.chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ── 开关胶囊 ─────────────────────────────────────────────────────
+   旋钮是 ::after 绝对定位，宿主必须自己当包含块。旧界面曾把
+   .in-head 写成 position:static，旋钮越过按钮以整张卡片为包含块，
+   在卡片左上角冒出一个白圆点。这里默认就 relative，杜绝复发。 */
+.mini-switch {
+  position: relative; flex: 0 0 44px;
+  width: 44px; height: 24px; border-radius: 999px;
+  background: var(--groove-bg);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.mini-switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; border-radius: 50%; background: #fff;
+  box-shadow: var(--e1); transition: left var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.mini-switch:hover::after { box-shadow: var(--e2); }
+.mini-switch.on { background: var(--blue); }
+.mini-switch.on::after { left: 23px; }
+.mini-switch:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.mini-switch.in-head { position: relative; top: 0; right: 0; margin-top: 4px; }
+
+/* ── 状态点与全局提示 ─────────────────────────────────────────── */
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  display: inline-block; margin-right: 6px;
+  background: var(--ink-faint);
+  transition: background var(--t-fast) var(--ease);
+}
+/* 提示条走浮层玻璃（.m-glass 供底与描边），这里只留定位与入场。
+   底部铭牌条已去掉，提示条落回页底二十来像素即可。 */
+.toast {
+  position: fixed; left: 50%; bottom: 24px; z-index: var(--layer-toast);
+  transform: translateX(-50%);
+  padding: 10px 16px; border-radius: var(--r-sm);
+  color: var(--ink); font-size: 13px;
+  animation: toast-in var(--t-slow) var(--ease) both;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ── 右下角通知卡：从下往上压一张，最多三张 ─────────────────────── */
+.nt-stack {
+  position: fixed; right: 24px; bottom: 24px; z-index: var(--layer-toast);
+  width: 320px; max-width: calc(100vw - 32px);
+  /* 新的压在最上面：DOM 顺序就是视觉顺序，读起来不用先找「哪条是最新」 */
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.nt-card {
+  position: relative; pointer-events: auto;
+  padding: 12px 14px; border-radius: var(--r-md);
+  box-shadow: var(--e3);
+  animation: nt-in var(--t-slow) var(--ease) both;
+}
+@keyframes nt-in {
+  from { opacity: 0; transform: translateY(10px) scale(.99); }
+  to   { opacity: 1; transform: none; }
+}
+.nt-card-hd { display: flex; align-items: center; gap: 8px; padding-right: 20px; }
+.nt-card-kind { font-size: 11px; color: var(--blue); }
+.nt-card.warn .nt-card-kind { color: var(--red-text); }
+.nt-card-time { margin-left: auto; font-size: 11px; color: var(--ink-soft); }
+.nt-card-title {
+  margin-top: 6px; padding-right: 20px;
+  font-size: 13px; line-height: 1.5; color: var(--ink); cursor: pointer;
+  /* 米家的标题可以很长（带时间与执行结果），最多两行，不撑破卡片 */
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.nt-card.warn .nt-card-title { color: var(--red-text); }
+.nt-card-sub { margin-top: 2px; font-size: 11px; color: var(--ink-soft); }
+.nt-card-ask { margin-top: 8px; }
+.nt-card-ask.mono { font-size: 11px; color: var(--ink-faint); }
+.nt-x {
+  position: absolute; top: 8px; right: 8px;
+  width: 22px; height: 22px; border-radius: var(--r-xs);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ink-soft);
+}
+.nt-x:hover { color: var(--ink); background: var(--hover-bg); }
+.nt-x .ui-ico { width: 12px; height: 12px; }
+@media (max-width: 760px) {
+  .nt-stack { right: 16px; left: 16px; bottom: 16px; width: auto; }
+}
+/* ── ⑤ 详情增强 · 控件：云台方向盘 ──────────────────────────── */
+.cam-pad-btn {
+  aspect-ratio: 1; min-height: 40px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  background: var(--input-bg); color: var(--ink-muted);
+  font-family: var(--font-mono); font-size: 16px; cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease);
+}
+.cam-pad-btn:hover:not(:disabled) {
+  border-color: var(--blue); background: var(--blue-soft); color: var(--blue);
+}
+.cam-pad-btn.empty { opacity: .28; cursor: default; }
+
+/* ── ⑥ 面板控件：危险按钮、尺寸切换、折叠标题、状态徽点 ────────────── */
+.btn.danger {
+  color: var(--red-text); border-color: var(--line-strong);
+  background: var(--red-soft);
+}
+.btn.danger:hover {
+  color: var(--red-text); border-color: var(--red-text);
+  background: var(--red-soft);
+}
+.scene-btn { border-radius: var(--r-sm); font-size: 13px; }
+
+/* 场景砖：比普通按钮高一档（68px），左边一枚凹槽里的线性图标，
+   右边一个只在 hover 时点亮的箭头。按下有水波，执行中转圈。 */
+.scene-tile {
+  position: relative; overflow: hidden;
+  justify-content: flex-start; text-align: left;
+  height: auto; min-height: 68px; padding: 12px 14px; gap: 12px;
+  border-radius: var(--r-md);
+  transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease),
+              transform var(--t-fast) var(--ease);
+}
+.scene-tile:hover:not(:disabled) {
+  border-color: var(--line-strong); background: var(--input-bg); box-shadow: var(--e1);
+  transform: translateY(-1px);
+}
+.scene-tile:active:not(:disabled) { transform: translateY(0) scale(.992); box-shadow: none; }
+
+.st-ico {
+  flex: 0 0 36px; width: 36px; height: 36px; border-radius: 10px;
+  display: grid; place-items: center;
+  border: 1px solid var(--line); background: var(--groove-bg); color: var(--ink-muted);
+  transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease);
+}
+.st-ico svg { width: 20px; height: 20px; }
+.scene-tile:hover:not(:disabled) .st-ico {
+  color: var(--blue); background: var(--blue-soft); border-color: transparent;
+}
+
+.st-text { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.st-name {
+  font-size: 14px; font-weight: 500; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.st-dupe { flex: none; font-size: 11px; color: var(--ink-faint); }
+
+.st-go {
+  margin-left: auto; flex: none;
+  width: 20px; height: 20px; display: grid; place-items: center;
+  color: var(--ink-faint);
+  transition: color var(--t-fast) var(--ease);
+}
+.st-arrow {
+  width: 16px; height: 16px;
+  transition: transform var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
+}
+.scene-tile:hover:not(:disabled) .st-arrow { transform: translateX(2px); color: var(--blue); }
+.st-arrow path { stroke: currentColor; }
+
+/* 点下去的波纹：由 motion/scenePress 注入并回收，本身不占布局 */
+.st-ripple {
+  position: absolute; border-radius: 50%; pointer-events: none; opacity: 0;
+  background: var(--blue);
+}
+
+/* 执行中：箭头换成小转圈，砖块不再随 hover 抬起，避免看起来「还能点」 */
+.scene-tile:disabled { opacity: 1; cursor: progress; }
+.st-spin {
+  display: none; width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid var(--line-strong); border-top-color: var(--blue);
+}
+.scene-tile.is-busy { transform: none; box-shadow: none; }
+.scene-tile.is-busy .st-arrow { display: none; }
+.scene-tile.is-busy .st-spin { display: block; }
+.scene-tile.is-busy .st-ico {
+  color: var(--blue); background: var(--blue-soft); border-color: transparent;
+}
+
+/* 自动化面板不再折叠：标题是纯文字，不带箭头也不可点 */
+.auto-title {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--ink); font-size: 14px; font-weight: 500;
+}
+.auto-dot {
+  width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%;
+  background: var(--tick-strong);
+}
+.auto-item.on .auto-dot { background: var(--blue); }
+.auto-badge {
+  padding: 0 4px; border: 0;
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--ink-faint); white-space: nowrap;
+}
+.auto-item.on .auto-badge { color: var(--blue); }
+.wc-size {
+  width: 24px; height: 24px; padding: 0; line-height: 1;
+  border: 1px solid var(--line-strong); border-radius: var(--r-xs);
+  background: var(--input-bg); color: var(--ink-soft);
+  font-size: 11px; cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease);
+}
+.wc-size:hover { border-color: var(--blue); color: var(--blue); }
+.wc-size.active { background: var(--blue-soft); border-color: var(--blue); color: var(--blue); }
+.wc-sizes.in-drawer .wc-size { width: 34px; height: 28px; font-size: 12px; }
+
+/* ── 红外遥控 ─────────────────────────────────────────────────────
+   红外是单向发码：按钮只有「按下去发一次」这一种语义，没有开/关状态，
+   所以这里不写 .active 选中态（写了就等于伪造状态），只用 :active 反馈。 */
+.chip.ir-chip { padding: 3px 9px; }
+.chip.ir-chip:active { background: var(--blue-soft); border-color: var(--blue); color: var(--blue); }
+
+.ir-panel { display: flex; flex-direction: column; gap: 12px; }
+.ir-panel > .dr-section-label { margin-bottom: 0; }
+.ir-group { display: grid; gap: 6px; }
+.ir-group-k { font-size: 12px; color: var(--ink-soft); }
+.ir-count { margin-left: 6px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.ir-btns .ir-btn { min-width: 56px; }
+/* 模式是有限枚举：改成等宽网格，行数固定、不撑破弹框 */
+.ir-btns.dense {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 6px;
+}
+.ir-btns.dense .ir-btn { min-width: 0; padding-left: 0; padding-right: 0; }
+/* 温度步进：实体遥控器上的「－ 26°C ＋」。温度是连续量，铺成 16…30 的
+   按钮会占掉两大排、还得横着找。中间的数字是本机记的最后一次发送值
+   （ir-temperature 只写不读，云端给不出当前温度）。 */
+.ir-temp { display: flex; align-items: center; gap: 20px; padding: 1px 0 3px; }
+.ir-step {
+  width: 36px; height: 36px; padding: 0; flex: 0 0 auto;
+  border: 1px solid var(--line-strong); border-radius: var(--r-md);
+  background: transparent; color: var(--ink);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background .14s, border-color .14s, transform .1s;
+}
+/* 加减号用同一条描边画，两个键的笔画粗细/大小完全一致（全角字符凑不齐） */
+.ir-step svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+.ir-step:hover:not(:disabled) { background: var(--blue-soft); border-color: transparent; }
+.ir-step:active:not(:disabled) { transform: scale(.95); }
+.ir-step:disabled { opacity: .34; cursor: default; }
+.ir-step:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ir-temp-v {
+  min-width: 84px; text-align: center; color: var(--ink);
+  display: inline-flex; align-items: baseline; justify-content: center; gap: 2px;
+  font-size: 26px; font-weight: 550; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.ir-temp-v span { font-size: 14px; font-weight: 500; color: var(--ink-soft); }
+/* 自定义按键动辄几十个（电视遥控 97 个）：网格 + 限高滚动，不吃掉整列版面。
+   行高写死 + 高度取整行，滚动区不会在半个字上截断（截半个字最像界面坏了）。 */
+.ir-keys {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 6px;
+  grid-auto-rows: 26px; max-height: 186px; overflow: auto; padding-right: 2px;
+}
+.ir-keys .ir-key {
+  min-width: 0; height: 26px; padding: 0 8px; line-height: 24px;
+  /* .btn 是 inline-flex + 居中：居中溢出会两头截字，看着像界面坏了，
+     而且 text-align 对 flex 容器无效、省略号也出不来。按键格改成 block
+     左对齐，长名字在右边收成省略号。 */
+  display: block; text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .tab, .chip, .mini-switch, .mini-switch::after,
+  .cam-pad-btn, .wc-size { transition: none; }
+  .toast { animation: none; }
+}

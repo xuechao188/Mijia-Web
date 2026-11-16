@@ -1,0 +1,92 @@
+/* ============================================================
+   第 2 层 · 基础：重置、排版、焦点环、无障碍降级
+   ------------------------------------------------------------
+   全站只用一套字族、两档字重（400 / 500）、一条缓动曲线。
+   数字统一等宽，焦点环只用强调色。颗粒层与彩色光晕已退休。
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; height: 100%; }
+
+body {
+  min-width: 320px;
+  min-height: 100dvh;
+  color: var(--ink);
+  background: var(--stage);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+#app { min-height: 100dvh; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { border: 0; background: none; padding: 0; cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, h4, p { margin: 0; }
+img, svg { display: block; }
+table { border-collapse: collapse; border-spacing: 0; }
+
+::selection { background: var(--blue-soft); }
+
+/* 全局焦点环：键盘走一圈只看到一种颜色 */
+:focus { outline: none; }
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* 数字等宽，表格与读数不跳位 */
+.tnum { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--font-mono); font-size: 12px; }
+.muted { color: var(--ink-muted); }
+.soft { color: var(--ink-soft); }
+.faint { color: var(--ink-faint); }
+.ellipsis { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* 滚动条：细、低对比，只在需要时出现 */
+* { scrollbar-width: thin; scrollbar-color: rgba(var(--shade), .18) transparent; }
+:root[data-theme="dark"] * { scrollbar-color: rgba(255, 255, 255, .14) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { border-radius: var(--r-xs); background: rgba(var(--shade), .16); border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* 段落标题：只靠字号与颜色分层，不加装饰性圆点与光晕 */
+.section-label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+/* 颗粒层已随玻璃材质一起退休，保留空规则避免旧组件引用报错 */
+.grain-layer { display: none; }
+@media (prefers-contrast: more) {
+  .grain-layer { display: none; }
+}
+
+/* reduced motion：保留语义、去掉过程 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: .01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}

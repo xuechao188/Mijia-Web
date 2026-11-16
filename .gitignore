@@ -1,0 +1,44 @@
+# 运行环境与依赖（不要提交）
+.venv/
+venv/
+env/
+web/node_modules/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 本地探针：含真实摄像头 token / go2rtc 密码 / 本机路径日志
+_probe/
+
+# 运行期数据：登录 token、设备缓存、事件库、日志（默认在数据目录，
+# 有人把 MIHOME_DATA_DIR 指到项目里时，这些规则再兜一层）
+mi.token
+device_id
+deviceId
+spec_cache.json
+devices_cache.json
+groups.json
+layout.json
+ir_keys.json
+*.db
+*.db-*
+*.db-wal
+*.db-shm
+*.log
+logs/
+data/
+runtime/
+
+# 本地配置与密钥
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.crt
+
+# 编辑器与系统
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

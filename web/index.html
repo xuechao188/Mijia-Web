@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>米家Web版</title>
+<script>
+/* 首帧预涂：module 脚本加载前先定好外观，避免深色用户闪白。
+   键名与旧界面一致；缺省值与 theme/core.ts 的 readStoredTheme 保持同步。 */
+(function () {
+  try {
+    var r = document.documentElement;
+    r.dataset.theme = (localStorage.getItem('mi-mode') || localStorage.getItem('mi-theme')) === 'dark' ? 'dark' : 'light';
+    r.dataset.preset = localStorage.getItem('mi-preset') || 'blue';
+    r.dataset.density = localStorage.getItem('mi-density') || 'standard';
+  } catch (e) { /* 隐私模式下用浅色默认值 */ }
+})();
+</script>
+</head>
+<body>
+<div id="app"></div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

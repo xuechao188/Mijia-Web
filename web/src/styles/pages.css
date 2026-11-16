@@ -1,0 +1,408 @@
+/* ============================================================
+   第 7 层 · 页面差异之一：登录页
+   ------------------------------------------------------------
+   舞台去掉两团彩色漫射光，卡片是实色面 + 一条发丝线。
+   品牌字回到正文字色，主按钮用中性墨色实底（浅色深底、
+   深色浅底），强调色留给选择位与读数。二维码底板保持纯白。
+   ============================================================ */
+
+.login-stage {
+  position: fixed; inset: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--stage);
+  overflow-y: auto; padding: 32px 16px;
+}
+
+.lp-mode {
+  position: absolute; top: 24px; right: 24px;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: var(--control-h); padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--pill-bg);
+  color: var(--ink-muted); font-size: 12px;
+  transition: color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.lp-mode:hover { color: var(--ink); border-color: var(--line-strong); }
+.lp-mode .ui-ico { width: 14px; height: 14px; }
+
+.lp-card {
+  width: 380px; max-width: 94vw;
+  padding: 32px;
+  border: 1px solid var(--glass-line);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  box-shadow: var(--e3);
+  animation: lp-card-in var(--t-slow) var(--ease) both;
+}
+@keyframes lp-card-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.lp-brand {
+  font-size: 24px; font-weight: 500; letter-spacing: 0; text-align: center;
+  color: var(--ink);
+}
+.lp-brand span { font-weight: 400; color: var(--ink-faint); }
+.lp-sub { text-align: center; color: var(--ink-muted); font-size: 13px; margin: 8px 0 24px; }
+
+.lp-tabs {
+  display: flex; gap: 4px; padding: 4px; margin-bottom: 24px;
+  border-radius: var(--r-sm);
+  background: var(--groove-bg);
+}
+.lp-tab {
+  flex: 1; padding: 8px 0;
+  border-radius: var(--r-sm);
+  color: var(--ink-soft); font-size: 14px; font-weight: 400;
+  transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.lp-tab.active {
+  background: var(--surface-solid); color: var(--ink);
+  box-shadow: var(--e1);
+}
+.lp-tab:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* 扫码区：底板必须纯白，否则深色主题下二维码对比度不够 */
+.qr-frame {
+  position: relative;
+  width: 232px; height: 232px; margin: 0 auto;
+  border: 1px solid var(--line-strong); border-radius: var(--r-md);
+  background: #fff; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--e1);
+}
+.qr-frame img { width: 212px; height: 212px; image-rendering: pixelated; display: block; }
+.qr-placeholder { color: #8a8a8a; font-size: 13px; padding: 0 12px; text-align: center; }
+.qr-overlay {
+  position: absolute; inset: 0;
+  background: var(--surface-solid);
+  display: flex; flex-direction: column; gap: 12px;
+  align-items: center; justify-content: center;
+}
+:root[data-theme="dark"] .qr-overlay { background: #201f1c; }
+.qr-overlay-text { color: var(--ink-muted); font-size: 14px; font-weight: 500; }
+.qr-refresh {
+  padding: 8px 16px; border-radius: var(--r-sm);
+  background: var(--ink); color: var(--surface-solid); font-size: 13px; font-weight: 500;
+  transition: opacity var(--t-fast) var(--ease);
+}
+.qr-refresh:hover { opacity: .85; }
+.qr-status { text-align: center; margin-top: 12px; font-size: 13px; color: var(--ink-muted); min-height: 20px; }
+.qr-status.ok { color: var(--leaf-text); font-weight: 500; }
+.qr-status.err { color: var(--red-text); font-weight: 500; }
+.qr-tip { text-align: center; font-size: 12px; color: var(--ink-faint); margin-top: 4px; }
+
+/* 账号密码区 */
+.lp-pwd input {
+  width: 100%; padding: 10px 12px; margin-bottom: 12px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  background: var(--input-bg); color: var(--ink); font-size: 14px;
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.lp-pwd input::placeholder { color: var(--ink-faint); }
+.lp-pwd input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
+.lp-login-btn {
+  width: 100%; padding: 12px; border-radius: var(--r-sm);
+  background: var(--ink); color: var(--surface-solid);
+  font-size: 15px; font-weight: 500; letter-spacing: 0;
+  transition: opacity var(--t-fast) var(--ease);
+}
+.lp-login-btn:hover { opacity: .85; }
+.lp-login-btn:disabled { opacity: .55; }
+.msg { margin-top: 8px; color: var(--red-text); font-size: 12px; min-height: 16px; text-align: center; }
+.otp-box { display: flex; gap: 8px; margin-top: 4px; }
+.otp-box input {
+  flex: 1; min-width: 0; padding: 10px 12px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  background: var(--input-bg); color: var(--ink);
+}
+.otp-box button {
+  flex: none; padding: 10px 16px; border-radius: var(--r-sm);
+  background: var(--ink); color: var(--surface-solid); font-size: 13px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-card { animation: none; }
+}
+
+/* ============================================================
+   登录页左右布局：左猫右卡
+   ------------------------------------------------------------
+   猫是 3D 渲染位图，注意力最重，给它独立一栏；卡片保持 380px。
+   窄屏收到 1020px 以下自动变回上下堆叠，猫缩小，不再抢占纵向空间。
+   ============================================================ */
+.lp-shell {
+  display: flex; align-items: center; justify-content: center;
+  gap: 52px; width: 100%;
+}
+.lp-cat-side { flex: none; width: 264px; }
+
+/* ============================================================
+   登录猫：位图猫体 + SVG 眼睛覆盖层
+   ------------------------------------------------------------
+   猫体来自 assets/cat-orange.webp（橘猫）；眼睛画在覆盖层里，与位图
+   共用 664×860 的 viewBox，所以瞳孔永远贴着眼球走。覆盖层只画到虹膜
+   外沿，位图原有的深色眼线留作眼睑，两者不会打架。
+   鼠标移动只驱动瞳孔（--px/--py），猫体保持不动。
+   ============================================================ */
+.lp-cat {
+  --px: 0px; --py: 0px;
+  position: relative; width: 100%;
+  cursor: pointer; outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.lp-cat-stage {
+  position: relative;
+  /* 与位图同比例，图片未加载完也不会塌成 0 高 */
+  aspect-ratio: 664 / 860;
+}
+.lp-cat-photo {
+  position: absolute; inset: 0;
+  display: block; width: 100%; height: 100%;
+  object-fit: contain;
+  user-select: none; -webkit-user-drag: none;
+  /* 位图没有落地阴影，补一层极淡的中性投影，避免猫浮在背景上 */
+  filter: drop-shadow(0 12px 20px rgba(22, 24, 32, .10));
+}
+html[data-theme="dark"] .lp-cat-photo {
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, .46));
+}
+.lp-cat-art { position: absolute; inset: 0; pointer-events: none; }
+.lp-cat-eyes { display: block; width: 100%; height: 100%; overflow: visible; }
+
+/* 虹膜：琥珀径向渐变，色值取自位图虹膜，边缘压暗 */
+.cat-iris { fill: url(#cat-iris-grad); }
+/* 角膜缘：一圈深褐，把眼球边缘压下去 */
+.cat-limbal { fill: none; stroke: #3f2205; stroke-opacity: .5; }
+/* 瞳孔亮环：贴瞳孔一圈暖光，眼睛才不发死 */
+.cat-halo { fill: none; stroke: rgba(246, 198, 118, .38); }
+/* 下眼睑水光 */
+.cat-wet { fill: none; stroke: rgba(255, 240, 205, .22); stroke-linecap: round; }
+/* 瞳孔：带柔边，跟随 --px/--py 平移 */
+.cat-pupil {
+  transform: translate(var(--px), var(--py));
+  transition: transform 90ms linear;
+}
+.cat-pupil-body { fill: url(#cat-pupil-grad); }
+.cat-glint { fill: #fff; opacity: .92; }
+.cat-glint.sm { opacity: .5; }
+/* 上眼皮：默认收起，眨眼与眯眼时落下；fill 由 SVG 内联给出 */
+.cat-lid {
+  transform-box: fill-box; transform-origin: 50% 0;
+  transform: scaleY(0);
+  transition: transform 110ms var(--ease);
+}
+
+/* 等待扫码：瞳孔略往上，像在等你抬头看手机 */
+.lp-cat[data-mood="wait"] .cat-pupil {
+  transform: translate(var(--px), calc(var(--py) - 4.6px));
+}
+/* 登录成功：眼睑压成笑眼弧，眼神还在，整只猫跳一下（只播一次）。
+   不用平涂色块整只眼睛盖住——那样在浅底上会变成一个圆片。 */
+.lp-cat[data-mood="ok"] .cat-droop-soft { opacity: 1; }
+.lp-cat[data-mood="ok"] .lp-cat-stage { animation: cat-hop .62s var(--ease) 1; }
+/* 二维码过期：眼睑压下来、瞳孔下垂，眼神发蔫 */
+.cat-droop { opacity: 0; transition: opacity 160ms var(--ease); pointer-events: none; }
+.cat-droop-edge { fill: none; stroke: #4a2c0c; stroke-opacity: .5; stroke-linecap: round; }
+.lp-cat[data-mood="err"] .cat-droop-deep { opacity: 1; }
+.lp-cat[data-mood="err"] .cat-pupil {
+  transform: translate(var(--px), calc(var(--py) + 3.4px));
+}
+
+@keyframes cat-hop {
+  0% { transform: translate(0, 0) scaleY(1); }
+  22% { transform: translate(0, -9px) scaleY(1.02); }
+  46% { transform: translate(0, 0) scaleY(.985); }
+  68% { transform: translate(0, -3px) scaleY(1.005); }
+  100% { transform: translate(0, 0) scaleY(1); }
+}
+/* 点一下：眨一下眼，表示听见了 */
+@keyframes cat-blink {
+  0%, 100% { transform: scaleY(0); }
+  46%, 58% { transform: scaleY(1); }
+}
+.lp-cat.is-poked .cat-lid { animation: cat-blink .42s var(--ease) 1; }
+.lp-cat:focus-visible { outline: 2px solid var(--blue); outline-offset: 8px; border-radius: var(--r-md); }
+
+/* 气泡：默认不显示，说话时浮在头顶 */
+.cat-say {
+  position: absolute; left: 50%; bottom: calc(100% + 2px);
+  transform: translate(-50%, 6px);
+  max-width: 190px; padding: 8px 12px; border-radius: var(--r-sm);
+  background: var(--surface-solid); border: 1px solid var(--line);
+  box-shadow: var(--e1);
+  color: var(--ink); font-size: 12px; line-height: 1.35;
+  white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.cat-say.show { opacity: 1; transform: translate(-50%, 0); }
+.cat-say::after {
+  content: ""; position: absolute; left: 50%; bottom: -5px;
+  width: 8px; height: 8px; margin-left: -4px;
+  background: var(--surface-solid); border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transform: rotate(45deg);
+}
+
+/* 窄屏：回到上下堆叠，猫让位给登录卡 */
+@media (max-width: 1020px) {
+  .lp-shell { flex-direction: column; gap: 20px; }
+  .lp-cat-side { width: 176px; }
+}
+/* 矮屏：猫再小一号，避免卡片被挤出首屏 */
+@media (max-height: 760px) and (min-width: 1021px) {
+  .lp-cat-side { width: 216px; }
+}
+
+/* 不喜欢动效就别动 */
+@media (prefers-reduced-motion: reduce) {
+  .lp-cat *, .lp-cat { animation: none !important; transition: none !important; }
+}
+
+/* ============================================================
+   第 7 层 · 页面差异之二：设备页与面板页
+   ------------------------------------------------------------
+   统计条只放数字；面板页保持桌面应用宽度，不收成窄栏。
+   ============================================================ */
+
+.device-page { display: flex; flex-direction: column; }
+/* 统计条做成仪器条：读数横排，格间一条发丝线，最后留一格在线率微槽。
+   数字等宽、行高固定，读数变化时格子不跳动。
+   类型分组的格数由 --stat-cols 决定（空组不占位），在线率格恒加宽。 */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(var(--stat-cols, 3), minmax(88px, 1fr)) minmax(176px, 1.4fr);
+  margin-bottom: 16px;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  overflow: hidden;
+  font-size: 12px; color: var(--ink-soft);
+}
+.stat-cell {
+  display: flex; flex-direction: column; justify-content: center; gap: 2px;
+  min-width: 0; min-height: 62px; padding: 8px 16px;
+}
+/* 分隔线用 .stat-strip 前缀压过按钮的 border 重置（否则右边框全被吃掉） */
+.stat-strip .stat-cell + .stat-cell { border-left: 1px solid var(--line); }
+.stat-k { font-size: 11px; line-height: 1.2; color: var(--ink-faint); }
+/* 设备格附一行「开 N」：开着几台是这一格里最该先看到的下钻信息 */
+.stat-sub {
+  font-size: 10px; line-height: 1.2; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.stat-sub.hot { color: var(--blue); }
+.stat-v {
+  font-size: 19px; font-weight: 500; line-height: 1.15; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+/* 计数格是一颗按钮：整格可点，不点就是纯读数，视觉上不加任何外框。
+   只有 hover 给一层极淡底、选中落主色浅底 + 主色字。 */
+.stat-cell.is-tap {
+  appearance: none; -webkit-appearance: none;
+  border: 0; background: transparent; color: inherit;
+  font: inherit; text-align: left; cursor: pointer;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.stat-cell.is-tap:not(.is-sel):hover { background: var(--hover-bg); }
+.stat-cell.is-tap:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.stat-cell.is-sel { background: var(--blue-soft); }
+.stat-cell.is-sel .stat-k,
+.stat-cell.is-sel .stat-v { color: var(--blue); }
+.stat-cell.is-sel .stat-sub { color: var(--blue); opacity: .72; }
+
+/* 强调色只落在「开 N」这一个真值上（.stat-sub.hot），其余走中性色阶 */
+.stat-cell.is-rate { min-width: 176px; }
+
+/* 筛选说明条：格子的高亮不解释「怎么回去」，这里补一句并给出口 */
+.stat-filter {
+  display: flex; align-items: center; gap: 8px;
+  margin: -6px 0 14px; padding: 0 2px;
+  font-size: 12px; color: var(--ink-soft);
+}
+.sf-k { color: var(--ink-faint); }
+.sf-v { color: var(--ink); font-weight: 500; }
+.sf-n { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.sf-clear {
+  margin-left: 2px; padding: 2px 9px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-xs);
+  background: transparent; color: var(--ink-soft);
+  font-size: 12px; line-height: 1.5; cursor: pointer;
+  transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.sf-clear:hover { color: var(--ink); background: var(--hover-bg); }
+.sf-clear:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.stat-rate { display: flex; align-items: center; gap: 10px; }
+.stat-v.sm { font-size: 15px; }
+.stat-u {
+  font-style: normal; margin-left: 1px;
+  font-size: 11px; font-weight: 400; color: var(--ink-soft);
+}
+.stat-track {
+  flex: 1 1 auto; min-width: 32px; max-width: 120px; height: 3px;
+  border-radius: 2px; background: var(--groove-bg); overflow: hidden;
+}
+.stat-bar {
+  display: block; height: 100%; background: var(--blue);
+  transition: width var(--t-slow) var(--ease);
+}
+
+/* 深色态：图标底色是中性台阶，不与主色预设叠加 */
+:root[data-theme="dark"] .dc-icon {
+  background: color-mix(in srgb, var(--cat) 18%, transparent);
+}
+:root[data-theme="dark"] .device-card.on .dc-icon { background: var(--blue-soft); }
+
+@media (max-width: 760px) {
+  /* 窄屏不拆两列：计数格仍排成一行（列数跟着分组走），只有在线率落到第二行。
+     拆两列会让「设备 63」和「在线 54」各占半行，六格读起来像三个不相干的表。 */
+  .stat-strip { grid-template-columns: repeat(var(--stat-cols, 3), minmax(0, 1fr)); }
+  .stat-strip .stat-cell { min-width: 0; padding: 8px 10px; }
+  /* 一行放下六格全靠收字号；标签不让换行，否则格子高度会一高一低 */
+  .stat-k { font-size: 10px; white-space: nowrap; }
+  .stat-v { font-size: 17px; }
+  .stat-sub { font-size: 9px; }
+  .stat-strip .stat-cell.is-rate {
+    grid-column: 1 / -1; min-width: 0;
+    border-top: 1px solid var(--line); border-left: 0;
+  }
+  .stat-track { max-width: 320px; }
+}
+
+@media (max-width: 430px) {
+  /* 手机竖屏：六格再紧一档，仍是单行 */
+  .stat-strip .stat-cell { padding: 7px 6px; }
+  .stat-v { font-size: 16px; }
+  .stat-k { font-size: 9.5px; letter-spacing: -.2px; }
+  .stat-sub { font-size: 8.5px; }
+  .stat-cell.is-rate { padding: 7px 10px; }
+}
+
+/* ── ⑥ 页面层：面板页与天气卡的窄屏 / 深色差异 ───────────────────── */
+.content > .scene-panel,
+.content > .automation-panel,
+.content > .event-panel { max-width: 1440px; }
+
+:root[data-theme="dark"] .auto-item:hover { background: var(--hover-bg); }
+/* 天气抽屉的「AQI 33 · 良」比普通读数长，允许换行，别用省略号截断 */
+.sheet[aria-label="天气详情"] .dr-readout-v {
+  font-size: 13px; white-space: normal; overflow-wrap: anywhere;
+}
+
+@media (max-width: 620px) {
+  .scene-panel, .automation-panel, .event-panel { padding: 16px; }
+  .scene-row { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .scene-tile { min-height: 60px; padding: 10px 12px; gap: 10px; }
+  .st-ico { flex-basis: 32px; width: 32px; height: 32px; }
+  .st-ico svg { width: 18px; height: 18px; }
+  .st-name { font-size: 13px; }
+  .auto-side { display: none; }
+  .auto-head { align-items: flex-start; }
+  .wc-metrics { grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auto-item, .wc-size, .stat-bar,
+  .stat-cell.is-tap, .sf-clear { transition: none; }
+  /* 场景砖：位移与转圈都停，但保留颜色反馈，仍看得出按下与进行中 */
+  .scene-tile, .st-ico, .st-arrow { transition: none; }
+  .scene-tile:hover:not(:disabled) { transform: none; }
+}
