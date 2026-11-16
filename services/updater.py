@@ -234,6 +234,19 @@ def _safe_download(url: str, dest: str, expect_size: int = 0) -> None:
                 pass
 
 
+def _safe_expect_size(asset: dict) -> int:
+    """决定是否用 API 的 size 做精确校验。
+
+    Release 资产被替换（删旧传新）后，GitHub API 的 size 元数据可能短暂滞后，
+    精确匹配会误伤合法升级包。资产带 sha256 digest 时以 digest 为权威完整性
+    校验，跳过 size 精确匹配；下载体积上限（UPDATE_MAX_BYTES）始终生效。
+    """
+    digest = (asset.get("digest") or "").strip().lower()
+    if digest.startswith("sha256:"):
+        return 0
+    return int(asset.get("size") or 0)
+
+
 def _verify_digest(path: str, digest: str) -> None:
     if not digest:
         return
@@ -423,7 +436,7 @@ def apply(release: dict = None) -> dict:
         fname += ".zip"
     dest = os.path.join(config.UPDATE_DOWNLOAD, fname)
     log.info("开始下载升级包 %s", asset["url"])
-    _safe_download(asset["url"], dest, asset.get("size") or 0)
+    _safe_download(asset["url"], dest, _safe_expect_size(asset))
     _verify_digest(dest, asset.get("digest") or "")
     files = inspect_zip(dest)
     # 覆盖前整包备份（不只备份被改文件，回滚更可靠）

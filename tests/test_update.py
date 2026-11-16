@@ -167,6 +167,12 @@ for bad in ["evil.com", "github.com.evil.com", "notgithubusercontent.com",
     ok(not U._download_host_ok(bad), "拒绝仿冒域名 %s" % bad)
 ok(U._download_host_ok("api.github.com", "api.github.com"), "放行自建 API 主机")
 
+# 6c. 有 sha256 时跳过可能滞后的 size 精确校验；无 digest 时仍校验 size
+ok(U._safe_expect_size({"size": 100, "digest": "sha256:abc"}) == 0,
+   "有 sha256 时跳过 size 精确校验")
+ok(U._safe_expect_size({"size": 100}) == 100, "无 digest 时保留 size 校验")
+ok(U._safe_expect_size({"size": 100, "digest": ""}) == 100, "空 digest 时保留 size 校验")
+
 # ---------------------------------------------------------------- 7. HTTP 接口
 config.UPDATE_REPO = ""   # 测「未配置」分支
 client = create_app().test_client()

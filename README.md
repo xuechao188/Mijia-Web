@@ -116,7 +116,7 @@ export MIHOME_UPDATE_AUTO_RESTART=0
 `.venv`、`node_modules`；下载只接受 GitHub 官方域名、有体积上限、逐项做 zip-slip
 与符号链接校验。写接口沿用同源守卫与可选 Basic 认证。
 
-> 当前状态：升级机制已实现并通过 90 项专项测试 + 全量回归；首个基线版本 `0.1.0`
+> 当前状态：升级机制已实现并通过 100+ 项专项测试 + 全量回归；首个基线版本 `0.1.1`
 > 已发布到 `https://github.com/xuechao188/Mijia-Web`，配置里已内置仓库地址，克隆后
 > 直接可用。点「检测新版本」即可比对 GitHub 上的 latest Release。
 
