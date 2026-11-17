@@ -89,7 +89,8 @@ onBeforeUnmount(() => auth.stopQrPoll())
           <button type="button" class="lp-login-btn" :disabled="auth.busy" @click="onLogin">登 录</button>
           <div class="msg">{{ auth.loginMsg }}</div>
           <div v-if="auth.otpVisible" class="otp-box">
-            <input v-model="otpCode" type="text" placeholder="输入验证码 / 二次验证">
+            <input v-model="otpCode" type="text" inputmode="numeric" autocomplete="one-time-code"
+                   :placeholder="'输入' + auth.otpMethod + '收到的验证码'" @keyup.enter="onOtp">
             <button type="button" @click="onOtp">提交验证码</button>
           </div>
         </div>

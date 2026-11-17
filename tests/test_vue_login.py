@@ -198,13 +198,34 @@ for text in ["正在获取二维码…", "请使用米家 App 扫码", "登录�
              "二维码获取失败", "网络异常，稍后重试", "正在检查登录状态…"]:
     ok(text in core_ts, "QR_TEXT 收录「%s」" % text)
     ok(text in app_js or text in old_index, "「%s」在旧版有出处" % text)
-ok("请填写账号和密码" in auth_ts and "验证码已提交，请稍候再刷新" in auth_ts,
-   "密码 / 验证码文案与旧版一致")
+ok("请填写账号和密码" in auth_ts and "验证码已提交，正在登录" in auth_ts,
+   "密码 / 验证码文案（验证码提交后自动登录）")
+
+# ---- 4b. 2FA 验证码流程：后端发信号 -> 前端弹框 -> 提交后等自动登录 ----
+# 后端：_otp_waiter 置 needed，/api/status 暴露 otp_needed
+state_py = read(os.path.join(ROOT, "services", "state.py"))
+devices_py = read(os.path.join(ROOT, "services", "devices.py"))
+ok('"otp_needed":' in routes_auth and '"otp_method":' in routes_auth,
+   "/api/status 暴露 otp_needed / otp_method 给前端")
+ok('"needed": False' in state_py and '"method": ""' in state_py,
+   "_OTP_CODE 含 needed / method 字段")
+ok('_OTP_CODE["needed"] = True' in devices_py and '_OTP_CODE["needed"] = False' in devices_py,
+   "_otp_waiter 进入置位、finally 清理 needed")
+ok('timeout=200' in devices_py and 'what="login"' in devices_py,
+   "密码登录超时放宽到 200 秒（覆盖 180 秒 OTP 等待窗口）")
+# 前端：passwordLogin 用 status 轮询驱动，不再依赖 /api/login 失败返回弹框
+ok("otp_needed" in auth_ts and "otp_method" in auth_ts,
+   "auth store 读取 otp_needed / otp_method")
+ok("setInterval(() => { void pollPasswordStatus() }" in auth_ts,
+   "密码登录启动 status 轮询")
+ok("pollPasswordStatus" in auth_ts and "succeedOnce" in auth_ts,
+   "轮询负责弹验证码框与登录成功收尾")
+ok("function S_loggedInCached" not in auth_ts, "无遗留的临时函数名")
 
 # ---- 5. 状态机接线 ----
-for token in ["stopQrPoll", "setQrStatus", "showOverlay", "setTab", "onLoginSuccess",
-              "finishEnter", "passwordLogin", "submitOtp", "logout", "bootstrap",
-              "waitForRestore", "startQr", "pollQr", "destroy"]:
+for token in ["stopQrPoll", "stopPwdPoll", "setQrStatus", "showOverlay", "setTab",
+              "onLoginSuccess", "finishEnter", "passwordLogin", "submitOtp", "logout",
+              "bootstrap", "waitForRestore", "startQr", "pollQr", "destroy"]:
     ok("function %s(" % token in auth_ts, "auth store 提供 %s()" % token)
 ok("phase.value = 'entering'" in auth_ts and "phase.value = 'app'" in auth_ts,
    "登录成功先进 entering 再由猫回调进 app")

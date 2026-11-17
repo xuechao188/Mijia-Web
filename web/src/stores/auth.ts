@@ -56,6 +56,7 @@ export const useAuthStore = defineStore('auth', () => {
   const busy = ref(false)
   const loginMsg = ref('')
   const otpVisible = ref(false)
+  const otpMethod = ref('')          // Phone / Email，提示用户去哪找验证码
   const user = ref('')
 
   const loggedIn = computed(() => phase.value === 'app' || phase.value === 'entering')
@@ -63,11 +64,20 @@ export const useAuthStore = defineStore('auth', () => {
   const hopMs = LOGIN_HOP_MS
 
   let pollTimer: ReturnType<typeof setInterval> | null = null
+  let pwdPollTimer: ReturnType<typeof setInterval> | null = null
 
   function stopQrPoll(): void {
     if (pollTimer) {
       clearInterval(pollTimer)
       pollTimer = null
+    }
+  }
+
+  /** 密码登录的登录态轮询：验证码提交后 miservice 会自动完成登录，前端据此进主界面 */
+  function stopPwdPoll(): void {
+    if (pwdPollTimer) {
+      clearInterval(pwdPollTimer)
+      pwdPollTimer = null
     }
   }
 
@@ -160,47 +170,102 @@ export const useAuthStore = defineStore('auth', () => {
     if (phase.value === 'entering') phase.value = 'app'
   }
 
+  function hasSucceeded(): boolean {
+    return phase.value === 'entering' || phase.value === 'app'
+  }
+
+  /** 登录成功后收尾：只认第一次，避免轮询与 /api/login 返回同时触发两次。 */
+  function succeedOnce(userName?: string): void {
+    if (hasSucceeded()) return
+    stopPwdPoll()
+    busy.value = false
+    otpVisible.value = false
+    loginMsg.value = ''
+    if (userName) user.value = userName
+    onLoginSuccess()
+  }
+
+  /** 轮询 /api/status：登录成功后进主界面；需要 2FA 时弹验证码输入框。 */
+  async function pollPasswordStatus(): Promise<void> {
+    try {
+      const st = await apiGet<StatusResult>('/api/status')
+      if (st.logged_in) {
+        succeedOnce()
+        return
+      }
+      // 后端 miservice 已发短信/邮件并挂起等待验证码 —— 立刻给出输入框，
+      // 不再等 /api/login 的失败返回（2FA 时它会一直阻塞到登录结束）。
+      if (st.otp_needed && !otpVisible.value && !hasSucceeded()) {
+        otpVisible.value = true
+        otpMethod.value = st.otp_method === 'Email' ? '邮箱' : '手机'
+        loginMsg.value = '请输入' + otpMethod.value + '收到的验证码，验证后将自动登录'
+      }
+    } catch {
+      // 短暂网络抖动，继续轮询
+    }
+  }
+
   async function passwordLogin(username: string, password: string): Promise<boolean> {
     if (!username.trim() || !password) {
       loginMsg.value = '请填写账号和密码'
       return false
     }
-    loginMsg.value = '登录中…'
+    stopPwdPoll()
+    loginMsg.value = '正在登录…'
     busy.value = true
-    try {
-      const r = await apiPost<{ ok?: boolean; error?: string; user?: string }>(
-        '/api/login', { username: username.trim(), password },
-      )
+    otpVisible.value = false
+    otpMethod.value = ''
+    // /api/login 在 2FA 场景会一直阻塞到登录完成（miservice 等验证码），
+    // 所以不能用它的返回来判断"要不要验证码"。改为发请求后就轮询 status：
+    // 后端一说 otp_needed 就弹输入框；登录完成（含提交验证码后自动完成）就进主界面。
+    void apiPost<{ ok?: boolean; error?: string; user?: string }>(
+      '/api/login', { username: username.trim(), password },
+    ).then((r) => {
       if (r.ok) {
-        loginMsg.value = ''
-        user.value = r.user || ''
-        onLoginSuccess()
-        return true
+        succeedOnce(r.user)
+      } else if (!hasSucceeded()) {
+        // 请求返回失败且尚未登录成功：密码错 / 风控等非 2FA 原因。
+        stopPwdPoll()
+        busy.value = false
+        otpVisible.value = false
+        loginMsg.value = r.error || '登录失败'
       }
-      loginMsg.value = r.error || '登录失败'
-      otpVisible.value = true
-      return false
-    } catch {
-      loginMsg.value = '网络异常，稍后重试'
-      return false
-    } finally {
+    }).catch(() => {
+      if (hasSucceeded()) return
+      stopPwdPoll()
       busy.value = false
-    }
+      otpVisible.value = false
+      loginMsg.value = '网络异常，稍后重试'
+    })
+    pwdPollTimer = setInterval(() => { void pollPasswordStatus() }, 1200)
+    return true
   }
 
   async function submitOtp(code: string): Promise<boolean> {
+    if (!code.trim()) {
+      loginMsg.value = '请输入验证码'
+      return false
+    }
     try {
-      await apiPost<{ ok?: boolean }>('/api/otp', { code: code.trim() })
-      loginMsg.value = '验证码已提交，请稍候再刷新'
+      const r = await apiPost<{ ok?: boolean; error?: string }>('/api/otp', { code: code.trim() })
+      if (r.ok === false) {
+        loginMsg.value = r.error || '验证码提交失败'
+        return false
+      }
+      // 提交成功后 miservice 会用验证码继续完成登录；轮询 status 检测到 logged_in 自动进主界面。
+      otpVisible.value = false
+      loginMsg.value = '验证码已提交，正在登录…'
+      void pollPasswordStatus()
       return true
     } catch {
-      loginMsg.value = '验证码提交失败'
+      loginMsg.value = '验证码提交失败，请重试'
       return false
     }
   }
 
   async function logout(): Promise<void> {
     stopQrPoll()
+    stopPwdPoll()
     try {
       await apiPost<{ ok?: boolean }>('/api/logout', {})
     } catch {
@@ -209,6 +274,8 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = ''
     loginMsg.value = ''
     otpVisible.value = false
+    otpMethod.value = ''
+    busy.value = false
     qrSrc.value = ''
     setQrStatus(QR_TEXT.checking, '')
     // phase 变成 login 会重新挂载 LoginPage，它的 phase 监听负责取码；
@@ -218,10 +285,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   function destroy(): void {
     stopQrPoll()
+    stopPwdPoll()
   }
 
   return {
-    phase, tab, qrText, qrCls, qrSrc, overlay, busy, loginMsg, otpVisible, user,
+    phase, tab, qrText, qrCls, qrSrc, overlay, busy, loginMsg, otpVisible, otpMethod, user,
     loggedIn, mood, hopMs,
     bootstrap, startQr, pollQr, stopQrPoll, setQrStatus, showOverlay, setTab,
     onLoginSuccess, finishEnter, passwordLogin, submitOtp, logout, destroy,

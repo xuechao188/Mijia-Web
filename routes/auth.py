@@ -4,7 +4,7 @@ from flask import Blueprint, Response, jsonify, request
 import logx
 from services import devices as dev
 from services import qrauth
-from services.state import S
+from services.state import S, _OTP_CODE
 
 log = logx.get("mihome.auth")
 bp = Blueprint("auth", __name__)
@@ -21,7 +21,7 @@ def login():
     if ok:
         return jsonify({"ok": True, "user": S["user"]})
     return jsonify({"ok": False,
-                    "error": "登录失败：请检查账号密码；如需验证码请查看事件流提示后提交"}), 401
+                    "error": "登录失败：请检查账号密码是否正确"}), 401
 
 
 @bp.route("/api/otp", methods=["POST"])
@@ -45,6 +45,10 @@ def status():
         "restoring": bool(S.get("restoring")),
         "user": S.get("user", ""),
         "devices": len(S.get("devices") or []),
+        # 密码登录 2FA：后端正在等验证码时前端据此弹出输入框。
+        # 未登录时才可能为 True，避免已登录态残留误触。
+        "otp_needed": bool(_OTP_CODE.get("needed")) and not bool(S["logged_in"]),
+        "otp_method": _OTP_CODE.get("method", ""),
     })
 
 

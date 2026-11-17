@@ -135,12 +135,22 @@ def _atomic_write(path, data):
 
 # ---------------------------------------------------------------- 登录
 async def _otp_waiter(msg: str) -> str:
-    """2FA 回调：等前端提交验证码（最多 180 秒）。"""
+    """2FA 回调：等前端提交验证码（最多 180 秒）。
+
+    进入时置 needed=True 让前端知道要弹验证码输入框；无论提交、超时还是异常，
+    都在 finally 里清掉 needed，避免状态残留让前端误判下一次登录。
+    """
     _OTP_CODE["event"].clear()
+    _OTP_CODE["value"] = None
+    _OTP_CODE["needed"] = True
+    _OTP_CODE["method"] = msg or ""
     log.info("需要二次验证: %s", msg[:120])
-    if _OTP_CODE["event"].wait(180):
-        return _OTP_CODE["value"] or ""
-    return ""
+    try:
+        if _OTP_CODE["event"].wait(180):
+            return _OTP_CODE["value"] or ""
+        return ""
+    finally:
+        _OTP_CODE["needed"] = False
 
 
 def submit_otp(code: str) -> None:
@@ -176,8 +186,10 @@ def login(username: str, password: str):
     """账号密码登录。成功返回 True。2FA 时会挂起等 submit_otp。"""
     with _LOGIN_LOCK:
         try:
+            # 2FA 时 _otp_waiter 最多等 180 秒验证码，登录协程会一直挂起；
+            # 超时必须大于这个窗口，否则用户还没填完验证码就被误判登录失败。
             account, service, devices = cloud.call(
-                _do_login(username, password), timeout=90, what="login")
+                _do_login(username, password), timeout=200, what="login")
         except Exception as e:
             log.warning("登录异常: %s", e)
             return False

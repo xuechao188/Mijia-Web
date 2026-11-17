@@ -27,6 +27,8 @@ export interface StatusResult {
   restoring?: boolean
   user?: string
   devices?: number
+  otp_needed?: boolean   // 密码登录 2FA：后端挂起等验证码
+  otp_method?: string    // Phone / Email
 }
 export interface QrStatus { text: string; cls: QrClass }
 

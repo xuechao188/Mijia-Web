@@ -17,7 +17,7 @@
 
 ## 二、Windows 绿色版
 
-1. 从 Releases 下载 `Mijia-Web-Windows-<版本号>.zip`（如 `Mijia-Web-Windows-0.2.0.zip`），解压到任意目录。
+1. 从 Releases 下载 `Mijia-Web-Windows-<版本号>.zip`（如 `Mijia-Web-Windows-0.2.1.zip`），解压到任意目录。
 2. 双击 `启动.bat`。看到 `[完成] 服务已在后台运行` 且浏览器自动打开即成功。
 3. 关闭黑色窗口不影响服务（后台运行）；停止服务双击 `停止.bat`。
 4. 浏览器没自动打开时，手动访问 `http://127.0.0.1:8765`。
@@ -27,7 +27,7 @@
 
 ## 三、macOS 版
 
-1. 从 Releases 下载 `Mijia-Web-macOS-<版本号>.zip`（如 `Mijia-Web-macOS-0.2.0.zip`），解压到"下载"或"文稿"等你有写权限的目录（不要直接放 `/Applications`）。
+1. 从 Releases 下载 `Mijia-Web-macOS-<版本号>.zip`（如 `Mijia-Web-macOS-0.2.1.zip`），解压到"下载"或"文稿"等你有写权限的目录（不要直接放 `/Applications`）。
 2. 首次使用前，打开"终端"执行下面一行，去掉系统的隔离标记（把路径换成你的实际位置）：
    ```
    xattr -cr "/你的路径/米家Web版-macOS-v<版本号>"

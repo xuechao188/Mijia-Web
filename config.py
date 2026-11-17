@@ -12,7 +12,7 @@ import sys
 
 APP_NAME = "Mijia-Web"          # 仓库目录名 / 数据目录名
 APP_NAME_CN = "米家Web版"       # 界面与文档展示名
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 PORT = int(os.environ.get("MIHOME_PORT", "8765"))
 # 默认只绑回环：本机使用不需要任何额外防护。
@@ -51,7 +51,7 @@ UPDATE_API = os.environ.get("MIHOME_UPDATE_API", "https://api.github.com").strip
 UPDATE_TOKEN = os.environ.get("MIHOME_UPDATE_TOKEN", "").strip()
 # 仓库主页（关于弹窗里展示、可点开）。留空时按 UPDATE_REPO 拼 https://github.com/owner/repo。
 UPDATE_HOMEPAGE = os.environ.get("MIHOME_GITHUB_URL", "").strip()
-# 升级包资产名前缀：发布时资产命名 <前缀><版本号>.zip，如 Mijia-Web-0.2.0.zip。
+# 升级包资产名前缀：发布时资产命名 <前缀><版本号>.zip，如 Mijia-Web-0.2.1.zip。
 UPDATE_ASSET_PREFIX = "Mijia-Web-"
 # 下载/解压超时与体积上限（防磁盘打满、防挂死）。
 UPDATE_TIMEOUT_S = 30
