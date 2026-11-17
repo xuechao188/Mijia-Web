@@ -10,6 +10,7 @@ import type { CardModel } from '../devices/content'
 import type { DeviceControl, DeviceView, LiveState } from '../devices/types'
 import { vCount } from '../motion/countup'
 import { useDevicesStore } from '../stores/devices'
+import ControlBusy from './ControlBusy.vue'
 
 const props = defineProps<{ model: CardModel; device: DeviceView }>()
 const emit = defineEmits<{
@@ -19,9 +20,29 @@ const emit = defineEmits<{
 }>()
 const store = useDevicesStore()
 
+/* 卡片整体可拖（HTML5 draggable），而滑块/按钮是原生交互控件。
+   浏览器会在「按下的元素落在可拖动祖先内」时发起原生 dragstart，
+   子元素的 @pointerdown.stop 只挡冒泡、挡不住这条原生拖拽。
+   因此在捕获阶段记录真实按下的目标，dragstart 时若命中控件则取消卡片拖动，
+   让 input[type=range]/button 自己处理拖动，避免一拖滑块就整卡跟着走。 */
+const pressTarget = ref<HTMLElement | null>(null)
+function onPointerDownCapture(e: PointerEvent): void {
+  pressTarget.value = e.target as HTMLElement
+}
+function onCardDragStart(e: DragEvent): void {
+  const el = pressTarget.value
+  pressTarget.value = null
+  if (el && el.closest('input, button, .ct-slider-row, .ct-stepper-row, .chip, .mini-switch')) {
+    e.preventDefault()
+    return
+  }
+  emit('dragstart', e)
+}
+
 const dragVals = ref<Record<string, number>>({})
 
 const live = computed<LiveState>(() => store.live[props.model.did] || {})
+const busy = computed(() => store.isControlling(props.model.did))
 const icon = computed(() => iconSvg(props.model.cat))
 const catLabel = computed(() => CATEGORY_LABELS[props.model.cat] || '')
 const singleSwitch = computed(() => props.model.showSwitch && !props.model.multi && !props.model.offline)
@@ -35,6 +56,14 @@ function currentOf(c: DeviceControl): number {
   if (v !== undefined) return v
   const l = live.value[c.key]
   return (l === undefined || l === null) ? Number(c.min ?? 0) : Number(l)
+}
+function onSliderPointerDown(e: PointerEvent): void {
+  // 捕获指针：即使拖动中指针移出滑块，pointerup 仍会回到这里，避免 setHold 残留 true
+  ;(e.currentTarget as HTMLInputElement).setPointerCapture?.(e.pointerId)
+  store.setHold(props.model.did, true)
+}
+function onSliderPointerUp(): void {
+  store.setHold(props.model.did, false)
 }
 function onSliderInput(c: DeviceControl, e: Event): void {
   dragVals.value = { ...dragVals.value, [c.key]: Number((e.target as HTMLInputElement).value) }
@@ -79,7 +108,8 @@ function chartSvg(points: Array<[number, number]>): string {
     :data-size="model.size"
     draggable="true"
     @click="emit('open', model.did)"
-    @dragstart="emit('dragstart', $event)"
+    @pointerdown.capture="onPointerDownCapture"
+    @dragstart="onCardDragStart"
     @dragend="emit('dragend', $event)"
   >
     <header class="dc-head">
@@ -163,11 +193,12 @@ function chartSvg(points: Array<[number, number]>): string {
             <span class="ct-slider-k">{{ c.label }}</span>
             <span class="ct-slider-v">{{ currentOf(c) }}{{ c.unit || '' }}</span>
           </div>
-          <input class="ct-range" type="range" :min="c.min ?? 0" :max="c.max ?? 100"
+          <input class="ct-range" type="range" draggable="false" :min="c.min ?? 0" :max="c.max ?? 100"
                  :step="c.step || 1" :value="currentOf(c)"
                  :aria-label="c.label"
-                 @pointerdown.stop="store.setHold(model.did, true)"
-                 @pointerup.stop="store.setHold(model.did, false)"
+                 @pointerdown.stop="onSliderPointerDown"
+                 @pointerup.stop="onSliderPointerUp"
+                 @pointercancel.stop="onSliderPointerUp"
                  @input="onSliderInput(c, $event)" @change="onSliderChange(c, $event)">
         </div>
       </div>
@@ -184,5 +215,8 @@ function chartSvg(points: Array<[number, number]>): string {
       </div>
       <div v-else-if="model.curveHint" class="ct-chart-empty">{{ model.curveHint }}</div>
     </div>
+
+    <!-- 控制执行中：盖住整卡拦截点击，防止状态回读完成前重复下发相反指令 -->
+    <ControlBusy :busy="busy" />
   </article>
 </template>

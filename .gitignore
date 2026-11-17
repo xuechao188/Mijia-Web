@@ -7,6 +7,11 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 
+# 本地打包产物与缓存（压缩包作为 Release 资产上传，不进仓库）
+build/
+dist/
+.build-cache/
+
 # 本地探针：含真实摄像头 token / go2rtc 密码 / 本机路径日志
 _probe/
 

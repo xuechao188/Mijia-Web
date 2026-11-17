@@ -14,6 +14,8 @@ import NoticeToasts from './components/NoticeToasts.vue'
 import WeatherDrawer from './components/WeatherDrawer.vue'
 import ThemePanel from './components/ThemePanel.vue'
 import AboutDialog from './components/AboutDialog.vue'
+import SyncingOverlay from './components/SyncingOverlay.vue'
+import DataLoadingOverlay from './components/DataLoadingOverlay.vue'
 import { useThemeStore } from './stores/theme'
 import { useAuthStore } from './stores/auth'
 import { useDevicesStore } from './stores/devices'
@@ -195,6 +197,13 @@ onUnmounted(() => {
     <!-- 关于应用 / 在线升级 -->
     <AboutDialog :open="aboutOpen" @close="aboutOpen = false" />
 
+    <!-- 首次登录后设备尚未拉取回来时盖住主界面，拿到设备自动消失 -->
+    <SyncingOverlay v-if="store.syncing" />
+
+    <!-- 设备已就位但实时状态还在回填时盖住主界面，避免看到「未知 / 亮度 0」中间态；
+         与 SyncingOverlay 互斥，刷新设备时也会短暂出现 -->
+    <DataLoadingOverlay v-if="store.loading && !store.syncing" />
+
     <div v-if="store.toastMsg" class="toast m-glass">{{ store.toastMsg }}</div>
   </div>
 </template>
@@ -204,7 +213,10 @@ onUnmounted(() => {
    组件与网格的细节样式一律写在第 4-7 层，避免两套来源打架。 */
 .stage { min-height: 100dvh; background: var(--stage); }
 .main { min-height: 100dvh; margin-left: var(--rail-w); display: flex; flex-direction: column; }
-.content { flex: 1; padding: 24px; max-width: 1520px; width: 100%; }
+/* 内容区铺满可用宽度：高分屏不再因 max-width 上限而在右侧留白。
+   设备网格是 auto-fill minmax(184px,1fr)、统计条是 1fr 弹性列，
+   都会随容器加宽自动增加列/拉伸，去掉上限不会让元素无限放大。 */
+.content { flex: 1; padding: 24px; width: 100%; }
 .logout { flex: none; }
 .top-version {
   font-family: var(--font-mono, monospace);

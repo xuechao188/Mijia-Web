@@ -1,0 +1,11 @@
+# Docker / CI / Unix 脚本强制 LF，避免 Windows 检出 CRLF 导致容器内执行失败
+Dockerfile          text eol=lf
+.dockerignore       text eol=lf
+docker-compose.yml  text eol=lf
+*.yml               text eol=lf
+*.yaml              text eol=lf
+*.sh                text eol=lf
+*.command           text eol=lf
+
+# Windows 批处理强制 CRLF
+*.bat               text eol=crlf

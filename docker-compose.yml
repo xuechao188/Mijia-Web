@@ -1,0 +1,50 @@
+# ============================================================
+# 米家Web版 - Docker Compose（群晖 Container Manager / 飞牛 Docker 通用）
+# 图形界面部署：新建 Compose 项目 -> 来源选"创建 docker-compose.yml" -> 粘贴本文件内容。
+# 只需改【必须修改】两处；【公网可选】部分按需放开。
+# ============================================================
+
+services:
+  mijia-web:
+    # 云端构建的多架构镜像（amd64 + arm64），群晖 x86/ARM、飞牛均可用。
+    # 升级：把版本号改成新版本后，在 NAS 上"拉取镜像 / 更新容器"即可。
+    image: ghcr.io/xuechao188/mijia-web:0.1.1
+    container_name: mijia-web
+    restart: unless-stopped
+
+    # 【必须修改 1】端口映射：冒号左边是 NAS 对外的端口，右边固定 8765。
+    # 例："9080:8765" 表示用 http://NAS的IP:9080 访问。
+    ports:
+      - "8765:8765"
+
+    # 【必须修改 2】数据持久化：冒号左边改成你 NAS 上真实存在的文件夹。
+    # 群晖示例：/volume1/docker/mijia-web/data
+    # 飞牛示例：/vol1/1000/docker/mijia-web/data
+    # token / 缓存 / 数据库 / 日志都在这里，重建容器也不会掉登录。
+    volumes:
+      - ./data:/data
+
+    environment:
+      TZ: Asia/Shanghai
+
+      # ---- 容器内固定值，不要改 ----
+      MIHOME_HOST: "0.0.0.0"          # 允许 NAS 外部访问
+      MIHOME_PORT: "8765"
+      MIHOME_NO_BROWSER: "1"          # 容器内不开浏览器
+      MIHOME_DATA_DIR: /data
+      MIHOME_UPDATE_REPO: ""          # 容器内禁用应用内升级（升级走换镜像 tag）
+
+      # ---- 【公网可选】 Basic 认证：公网访问务必设置，两项都填才生效 ----
+      MIHOME_ACCESS_USER: ""          # 例：admin
+      MIHOME_ACCESS_PASSWORD: ""      # 例：请换成一个长随机密码
+
+      # ---- 【公网可选】来源白名单：写接口只接受这些主机名，多个用逗号分隔 ----
+      # 仅内网访问可留空；配了域名/DDNS 就填这里，如：mi.example.com,www.example.com
+      MIHOME_ALLOWED_ORIGINS: ""
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8765/api/ping',timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s

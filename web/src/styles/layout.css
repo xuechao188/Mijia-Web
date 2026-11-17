@@ -2,7 +2,7 @@
    第 6 层 · 外壳：侧栏、顶栏、卡片网格、详情弹框、面板骨架
    ------------------------------------------------------------
    间距全部落 4px 栅格（小控件内部允许 2px 微调）。侧栏 256、
-   顶栏 56、内容上限 1520。卡片网格沿用 P0 验收结论：固定
+   顶栏 56，内容区自适应铺满可用宽度（高分屏不留白）。卡片网格沿用 P0 验收结论：固定
    128px 行高、小 1×1 / 中 2×1 / 大 2×2、dense 自动填空、
    空壳收成 1×1。表格密度令牌 --row-h 不参与卡片行高。
    ============================================================ */
@@ -332,6 +332,8 @@
 }
 .sheet-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .dr-panel { padding: 16px; border-radius: var(--r-md); }
+/* 控制面板：控制执行中的进度遮罩以此为定位基准 */
+.ctl-panel { position: relative; }
 .ctrl-row { margin-bottom: 16px; }
 .ctrl-row:last-child { margin-bottom: 0; }
 .ctrl-row label {

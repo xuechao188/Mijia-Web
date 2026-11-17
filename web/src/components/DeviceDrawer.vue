@@ -10,6 +10,7 @@ import { curveEntries, formatValue, labelOf, productLabel, readoutEntries, spark
 import type { DeviceControl, DeviceView, Size } from '../devices/types'
 import CameraPanel from './CameraPanel.vue'
 import CapDialog from './CapDialog.vue'
+import ControlBusy from './ControlBusy.vue'
 import IrPanel from './IrPanel.vue'
 import { drawerEnter, drawerLeave } from '../motion'
 import { vCount } from '../motion/countup'
@@ -118,21 +119,20 @@ function onRangeInput(c: DeviceControl, e: Event): void {
 }
 async function onRangeChange(c: DeviceControl, e: Event): Promise<void> {
   const v = Number((e.target as HTMLInputElement).value)
+  /* setControl 内部已含两拍回读：返回时真实状态已落到 live，
+   * 这里只需清掉本地临时值，交给回读的真值显示。 */
   const done = await store.setControl(did.value, c, v)
   if (!done) return
-  /* 设备可能把值夹到步进上：本地临时值作废，交给回读的真值 */
   const next = { ...rangeVals.value }
   delete next[c.key]
   rangeVals.value = next
-  void store.refreshDevice(did.value)
 }
-/* 模式这类枚举会连带改亮度和色温（吊灯切「傍晚」会把色温一起推到暖白），
- * 所以写成功后清掉滑块临时值，并等两拍回读，让状态区与滑块都落到真值。 */
+/* 模式这类枚举会连带改亮度和色温（吊灯切「傍晚」会把色温一起推到暖白）。
+ * setControl 已做两拍回读，这里只需清掉滑块临时值。 */
 async function pickEnum(c: DeviceControl, v: unknown): Promise<void> {
   const done = await store.setControl(did.value, c, v)
   if (!done) return
   rangeVals.value = {}
-  void store.settleDevice(did.value)
 }
 function chartSvg(points: Array<[number, number]>): string {
   return sparkline(points, { w: 320, h: 68, color: 'var(--blue)' })
@@ -184,7 +184,7 @@ async function toggleGroup(id: string, inside: boolean): Promise<void> {
           <!-- 红外遥控：命令与自定义按键都在这里，点一下发一次码 -->
           <IrPanel v-if="d.ir" :did="did" :ir="d.ir" :offline="d.online === false" />
 
-          <div v-if="hasControls" class="dr-panel m-surface">
+          <div v-if="hasControls" class="dr-panel m-surface ctl-panel">
             <div class="dr-section-label">控制</div>
             <template v-if="(d.switches || []).length > 1">
               <div v-for="(s, i) in (d.switches || [])" :key="s.key" class="ctrl-row">
@@ -222,6 +222,8 @@ async function toggleGroup(id: string, inside: boolean): Promise<void> {
                         @click="pickEnum(c, o.v)">{{ optionLabel(c.key, o.t) }}</button>
               </div>
             </div>
+            <!-- 控制执行中：盖住控制面板拦截点击，等真实状态回读完成再放行 -->
+            <ControlBusy :busy="store.isControlling(did)" />
           </div>
 
           <!-- ⑤ 摄像头专项：与旧界面一致，不区分在线状态，按 spec 动态出按钮 -->

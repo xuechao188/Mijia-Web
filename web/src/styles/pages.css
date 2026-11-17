@@ -378,9 +378,7 @@ html[data-theme="dark"] .lp-cat-photo {
 }
 
 /* ── ⑥ 页面层：面板页与天气卡的窄屏 / 深色差异 ───────────────────── */
-.content > .scene-panel,
-.content > .automation-panel,
-.content > .event-panel { max-width: 1440px; }
+/* 面板页不设宽度上限：高分屏跟随 .content 铺满，避免右侧留白 */
 
 :root[data-theme="dark"] .auto-item:hover { background: var(--hover-bg); }
 /* 天气抽屉的「AQI 33 · 良」比普通读数长，允许换行，别用省略号截断 */

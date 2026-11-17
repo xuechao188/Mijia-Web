@@ -1,0 +1,62 @@
+name: 构建并发布多架构 Docker 镜像
+
+# 触发方式：
+#   1) 推送形如 v0.1.1 的 tag -> 构建镜像并打 :0.1.1 与 :latest 两个标签
+#   2) 手动触发（Actions 页面 Run workflow）-> 打 :manual-<短SHA> 标签，用于验证
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write   # 推送镜像到 GHCR 必需
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}   # 结果形如 xuechao188/mijia-web（GHCR 自动小写）
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 QEMU（用于跨架构构建 arm64）
+        uses: docker/setup-qemu-action@v3
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录 GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # tag 推送 -> 版本号标签 + latest；手动触发 -> manual-<短SHA>
+      - name: 计算镜像标签
+        id: meta
+        run: |
+          # GHCR 要求镜像名全小写，而 github.repository 可能含大写（如 Mijia-Web）
+          IMG="$(echo "${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            VER="${GITHUB_REF_NAME#v}"
+            echo "tags=${REGISTRY}/${IMG}:${VER},${REGISTRY}/${IMG}:latest" >> "$GITHUB_OUTPUT"
+          else
+            SHA_SHORT=$(echo "${GITHUB_SHA}" | cut -c1-7)
+            echo "tags=${REGISTRY}/${IMG}:manual-${SHA_SHORT}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 构建并推送（amd64 + arm64）
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

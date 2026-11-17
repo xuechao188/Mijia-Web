@@ -131,7 +131,7 @@
   --t-fast: 140ms;
   --t-slow: 240ms;
 
-  /* 布局尺寸：侧栏 256、顶栏 56、内容上限 1520（App.vue） */
+  /* 布局尺寸：侧栏 256、顶栏 56；内容区自适应铺满可用宽度（App.vue） */
   --rail-w: 256px;
   --topbar-h: 56px;
   --layer-overlay: 200;

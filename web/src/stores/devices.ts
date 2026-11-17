@@ -69,6 +69,12 @@ export const useDevicesStore = defineStore('devices', () => {
   const loading = ref(false)
   const ready = ref(false)
   const syncing = ref(false)
+  /* 设备控制执行中的锁：did -> 是否正在执行。
+   * 控制指令从发到米家、设备实际动作、再到状态回读，存在秒级延迟；
+   * 乐观更新会让页面立刻显示目标状态，此时若用户再点反向按钮，就会连发
+   * 相互抵消的指令。这里按设备置锁：执行期间一律拒绝新的控制，UI 同步显示
+   * 进度提示并禁用交互，直到真实状态回读完成才解锁。 */
+  const controlling = ref<Record<string, boolean>>({})
 
   const deviceList = computed<DeviceView[]>(() => Object.values(devices.value))
   const tree = computed(() => groupLogic.buildTree(deviceList.value))
@@ -103,6 +109,11 @@ export const useDevicesStore = defineStore('devices', () => {
   let toastTimer: ReturnType<typeof setTimeout> | null = null
   let quickTimer: ReturnType<typeof setInterval> | null = null
   let fullTimer: ReturnType<typeof setInterval> | null = null
+  /* 首次扫码登录后，后端可能正被米家风控限流、设备列表暂时为空（后台线程补拉）。
+   * 这段时间界面上显示进度窗口，同时每几秒重拉一次 /api/devices；
+   * 一旦拿到设备，syncing 转 false，定时器随之停止。 */
+  let syncTimer: ReturnType<typeof setInterval> | null = null
+  let syncBusy = false
   let quickBusy = false
   let fullBusy = false
 
@@ -197,6 +208,24 @@ export const useDevicesStore = defineStore('devices', () => {
     filter.value = validFilter(filter.value)
     syncing.value = Boolean(r.logged_in) && deviceList.value.length === 0
     ready.value = true
+    /* 进度窗口开着时安排重拉；拿到设备后停止。这样后端后台补拉到列表，
+     * 前端无需刷新就能自动显示出来。 */
+    if (syncing.value) ensureSyncRetry()
+    else stopSyncRetry()
+  }
+
+  /* 等待首屏设备期间的重拉：每 4 秒拉一次列表，拿到设备即停。
+   * 限流可能持续几十秒到几分钟，重试本身很轻（只读后端内存），不影响轮询。 */
+  function ensureSyncRetry(): void {
+    if (syncTimer) return
+    syncTimer = setInterval(() => {
+      if (syncBusy) return
+      syncBusy = true
+      void loadDevices().finally(() => { syncBusy = false })
+    }, 4000)
+  }
+  function stopSyncRetry(): void {
+    if (syncTimer) { clearInterval(syncTimer); syncTimer = null }
   }
 
   async function loadLayout(): Promise<void> {
@@ -316,9 +345,18 @@ export const useDevicesStore = defineStore('devices', () => {
     live.value[did] = { ...(live.value[did] || {}), ...patch }
   }
 
+  /** 设备控制是否正在执行（含指令在途 + 设备动作 + 状态回读全过程）。
+   *  UI 用它显示进度提示并禁用按钮，store 用它拒绝重复指令——
+   *  两处共用同一个标志，避免「页面显示和控制中状态各说各话」。 */
+  function isControlling(did: string): boolean {
+    return Boolean(controlling.value[String(did)])
+  }
+
   async function toggle(did: string, on: boolean, key = 'on'): Promise<void> {
+    if (isControlling(did)) return // 正在执行，忽略重复点击，防止连发相反指令
     const d = devices.value[did]
     if (d && d.online === false) { toast('设备离线，无法控制'); return }
+    controlling.value = { ...controlling.value, [did]: true }
     bump(did)
     applyOptimistic(did, { [key]: on })
     if (key === 'on1' || key === 'on') applyOptimistic(did, { on })
@@ -330,17 +368,25 @@ export const useDevicesStore = defineStore('devices', () => {
         bump(did)
         applyOptimistic(did, { [key]: !on })
         toast(r.hint || r.error || '操作失败')
+        return
       }
+      /* 等真实状态回读完成再解锁：指令 ok 只代表米家收到了，
+       * 设备可能还在动作中，此刻放行仍可能让用户点到过期状态。 */
+      await settleDevice(did)
     } catch {
       bump(did)
       applyOptimistic(did, { [key]: !on })
       toast('网络异常，已回滚')
+    } finally {
+      controlling.value = { ...controlling.value, [did]: false }
     }
   }
 
   async function setControl(did: string, c: DeviceControl, value: unknown): Promise<boolean> {
+    if (isControlling(did)) return false // 正在执行，忽略重复点击
     const d = devices.value[did]
     if (d && d.online === false) { toast('设备离线，无法控制'); return false }
+    controlling.value = { ...controlling.value, [did]: true }
     bump(did)
     applyOptimistic(did, { [c.key]: value })
     try {
@@ -352,11 +398,14 @@ export const useDevicesStore = defineStore('devices', () => {
         toast(r.hint || r.error || '设置失败')
         return false
       }
+      await settleDevice(did)
       return true
     } catch {
       bump(did)
       toast('网络异常')
       return false
+    } finally {
+      controlling.value = { ...controlling.value, [did]: false }
     }
   }
 
@@ -480,7 +529,10 @@ export const useDevicesStore = defineStore('devices', () => {
   }
 
   function startPolling(): void {
-    stopPolling()
+    /* 只清自己这两个定时器，不动 syncTimer——后者由 loadDevices 依据 syncing 自行管理，
+     * 且 bootstrap() 与 startPolling() 在 App 里接连调用，清早了会掐掉刚建立的重拉。 */
+    if (quickTimer) clearInterval(quickTimer)
+    if (fullTimer) clearInterval(fullTimer)
     quickTimer = setInterval(() => { void pollQuick() }, QUICK_POLL_MS)
     fullTimer = setInterval(() => { void pollFull() }, FULL_POLL_MS)
   }
@@ -489,12 +541,14 @@ export const useDevicesStore = defineStore('devices', () => {
     if (fullTimer) clearInterval(fullTimer)
     quickTimer = null
     fullTimer = null
+    stopSyncRetry()
   }
 
   return {
     devices, live, ver, groups, layout, names, metrics, history, historyReady,
     filter, home, kw,
     drawerDid, drawerHours, holdDid, mainTab, toastMsg, loading, ready, syncing,
+    controlling, isControlling,
     deviceList, tree, navNodes, homes, activeHome, roomNav,
     visible, homesCount, stats, typeStats, statFilter, statFilterLabel,
     drawerDevice, filterLabel,
