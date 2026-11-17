@@ -1,7 +1,7 @@
 name: 构建并发布多架构 Docker 镜像
 
 # 触发方式：
-#   1) 推送形如 v0.1.1 的 tag -> 构建镜像并打 :0.1.1 与 :latest 两个标签
+#   1) 推送形如 v0.2.0 的 tag -> 构建镜像并打 :0.2.0 与 :latest 两个标签
 #   2) 手动触发（Actions 页面 Run workflow）-> 从 config.py 读取 VERSION，
 #      同样打 :<版本> 与 :latest 两个标签（用于不新建 tag 时重建镜像）
 on:
@@ -39,7 +39,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # tag 推送 -> 用 tag 版本号；手动触发 -> 从 config.py 读 VERSION。
-      # 两种情况都打 :<版本> 与 :latest，保证 compose 里写的 :0.1.1 一定能拉到。
+      # 两种情况都打 :<版本> 与 :latest，保证 compose 里写的 :0.2.0 一定能拉到。
       - name: 计算镜像标签
         id: meta
         run: |
