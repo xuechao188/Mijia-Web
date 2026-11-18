@@ -499,6 +499,22 @@
   margin: 8px 0 0; font-size: 11px; color: var(--ink-soft);
 }
 .nt-perm.off { color: var(--red-text); }
+/* 通知自检结果：浅底卡片，结论醒目、详情可复制 */
+.nt-diag {
+  margin-top: 12px; padding: 10px 12px; border-radius: var(--r-xs);
+  background: var(--input-bg); border: 1px solid var(--line-strong);
+}
+.nt-diag-hd { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.nt-diag-title { font-size: 12px; font-weight: 500; color: var(--ink); }
+.nt-diag-verdict { margin: 8px 0 0; font-size: 12px; color: var(--ink); line-height: 1.5; }
+.nt-diag-detail {
+  margin: 8px 0 0; font-size: 11px; line-height: 1.5; color: var(--ink-soft);
+  white-space: pre-wrap; word-break: break-word; user-select: text;
+}
+/* 通知类型标签栏：紧跟标题下方，复用 .chip 的选中态 */
+.nt-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.nt-filter .chip { display: inline-flex; align-items: center; gap: 5px; }
+.nt-filter .chip .mono { opacity: .7; font-size: 11px; }
 .nt-list li { align-items: flex-start; cursor: pointer; }
 .nt-list li:hover { background: var(--hover-bg); }
 /* 悬停底色要贴到卡片内缘，行内左右各补一点内边距 */

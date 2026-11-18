@@ -37,8 +37,23 @@ export const WEATHER_POLL_MS = 600000
 
 export const usePanelsStore = defineStore('panels', () => {
   /* ---------------- 场景 ---------------- */
+  /* scenes 永远是云端返回的全部条目；界面只渲染 scopedScenes（当前家庭那批）。
+   * 场景是家庭级的：与自动化同源，按 home_id 过滤，切家庭后只显示该家庭场景。 */
   const scenes = ref<SceneItem[]>([])
   const sceneBusy = ref<Record<string, boolean>>({})
+
+  /** 当前家庭（顶部家庭切换器选中的那个），与自动化共用 activeHome。 */
+  const sceneHome = computed(() => devices.activeHome)
+  /** 只留当前家庭的场景。设备树还没回来时先给全量，避免闪一下「0 个」。
+   *  场景条目只有 home_id，所以一律按 id 比对（与自动化同规则）。 */
+  const scopedScenes = computed<SceneItem[]>(() => {
+    const h = sceneHome.value
+    if (!h) return scenes.value
+    const hid = String(h.id || '')
+    if (!hid) return scenes.value
+    return scenes.value.filter((s) => String(s.home_id || '') === hid)
+  })
+  const sceneCount = computed(() => scopedScenes.value.length)
 
   /* ---------------- 自动化 ---------------- */
   /* automations 永远是云端返回的全部条目；界面只渲染 scopedAutomations
@@ -333,7 +348,8 @@ export const usePanelsStore = defineStore('panels', () => {
   }
 
   return {
-    scenes, sceneBusy, automations, autoCount, autoEnabled, autoWritable,
+    scenes, sceneBusy, scopedScenes, sceneCount,
+    automations, autoCount, autoEnabled, autoWritable,
     scopedAutomations, autoHome, autoHomeName,
     autoCreateSupported, autoDeleteSupported, autoHomes, autoCreateOpen,
     autoDetail, autoDetailId, autoDrawerOpen, autoBusy,

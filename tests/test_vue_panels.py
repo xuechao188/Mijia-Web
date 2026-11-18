@@ -358,6 +358,13 @@ ok("rip.className = 'st-ripple'" in read(path(SRC, "motion", "index.ts")),
    "水波节点由动效层注入（模板里没有多余节点）")
 ok("if (ok) sceneSettle(el)" in scene_vue, "只有执行成功才给「收到」反馈")
 panels_store = read(path(SRC, "stores", "panels.ts"))
+# 场景按当前家庭筛选：与自动化同一口径，切家庭只显示该家庭场景
+ok("store.scopedScenes" in scene_vue, "ScenesPanel 只渲染当前家庭场景 scopedScenes")
+ok("store.scenes.length" not in scene_vue, "场景数量不再用全量 scenes")
+ok("const scopedScenes = computed<SceneItem[]>" in panels_store,
+   "panels store 提供 scopedScenes 计算属性")
+ok("String(s.home_id || '') === hid" in panels_store,
+   "scopedScenes 按 home_id 与当前家庭比对")
 ok("async function runScene(s: SceneItem): Promise<boolean>" in panels_store,
    "runScene 回报成败，界面不做假成功")
 ok("ok = Boolean(r.ok)" in panels_store, "成败取自后端 ok 字段")

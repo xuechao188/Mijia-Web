@@ -11,7 +11,9 @@ import type { SceneItem } from '../panels/types'
 
 const store = usePanelsStore()
 
-const dupes = computed(() => dupeIndex(store.scenes))
+/* 只按当前家庭渲染场景（切家庭后自动更新），与自动化同一口径。 */
+const scenes = computed(() => store.scopedScenes)
+const dupes = computed(() => dupeIndex(scenes.value))
 const rowEl = ref<HTMLElement | null>(null)
 
 function busy(id: string): boolean { return Boolean(store.sceneBusy[id]) }
@@ -49,11 +51,11 @@ async function run(s: SceneItem, e: MouseEvent): Promise<void> {
   <section class="scene-panel m-surface">
     <div class="dr-history-head">
       <span class="dr-h-label">场景</span>
-      <span class="dim-note mono">{{ store.scenes.length }} 个</span>
+      <span class="dim-note mono">{{ scenes.length }} 个</span>
     </div>
-    <div v-if="!store.scenes.length" class="dim-note scene-empty">{{ SCENE_EMPTY }}</div>
+    <div v-if="!scenes.length" class="dim-note scene-empty">{{ SCENE_EMPTY }}</div>
     <div v-else ref="rowEl" class="scene-row">
-      <button v-for="s in store.scenes" :key="s.scene_id" type="button"
+      <button v-for="s in scenes" :key="s.scene_id" type="button"
               class="btn scene-btn scene-tile" :class="{ 'is-busy': busy(s.scene_id) }"
               :disabled="busy(s.scene_id)"
               :aria-label="'执行场景 ' + sceneLabel(s)"

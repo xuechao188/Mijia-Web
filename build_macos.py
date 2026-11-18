@@ -302,9 +302,34 @@ README_TXT = """米家Web版 - macOS 版
 
 
 def write_text(path, text, mode=None):
-    path.write_text(text, encoding="utf-8")
+    # 显式按 LF 写字节，不依赖平台默认换行，杜绝 CRLF 回归
+    data = text.replace("\r\n", "\n").encode("utf-8")
+    path.write_bytes(data)
     if mode is not None:
         path.chmod(mode)
+
+
+def verify_zip(out_zip):
+    """打包后自检：.command 必须是纯 LF 且可执行，否则直接报错。
+
+    历史上曾因脚本写成 CRLF 导致 macOS 双击报语法错误、服务起不来。
+    这里把约束固化，任何回归都会在打包当场暴露。
+    """
+    with zipfile.ZipFile(out_zip) as z:
+        cmds = [n for n in z.namelist() if n.endswith(".command")]
+        if len(cmds) != 2:
+            raise RuntimeError("自检失败：应有 2 个 .command，实际 %d" % len(cmds))
+        for n in cmds:
+            b = z.read(n)
+            crlf = b.count(b"\r\n")
+            mode = z.getinfo(n).external_attr >> 16 & 0o777
+            if crlf != 0:
+                raise RuntimeError(
+                    "自检失败：%s 含 %d 处 CRLF，macOS 的 bash 要求纯 LF" % (n, crlf))
+            if not (mode & stat.S_IXUSR):
+                raise RuntimeError(
+                    "自检失败：%s 不可执行（权限 %s）" % (n, oct(mode)))
+    log("自检通过：.command 均为纯 LF 且可执行")
 
 
 def make_zip(app, out_zip):
@@ -351,6 +376,7 @@ def main():
 
     out_zip = DIST / ("%s.zip" % app_name)
     make_zip(app, out_zip)
+    verify_zip(out_zip)
     log("=" * 50)
     log("全部完成：%s" % out_zip)
     log("=" * 50)

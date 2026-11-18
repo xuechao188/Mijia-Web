@@ -10,7 +10,12 @@
  */
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { isFresh, noticeLine, noticeTitle } from '../panels/notices'
+import {
+  isFresh, noticeLine, noticeTitle, runNotifyDiagnostic,
+  NOTICE_PERM_ASK_DEFAULT, NOTICE_PERM_ASK_DENIED, NOTICE_PERM_ASK_UNSAFE,
+  NOTICE_PERM_TOAST_DEFAULT, NOTICE_PERM_TOAST_OK, NOTICE_SYSTEM_UNAVAILABLE,
+  type NotifyDiag,
+} from '../panels/notices'
 import type { NoticeItem } from '../panels/types'
 import { useDevicesStore } from './devices'
 
@@ -57,6 +62,12 @@ export const useNoticesStore = defineStore('notices', () => {
       ? Notification.permission
       : 'unsupported',
   )
+  /* 用户是否点过「开启」：点过才可能在 default 态显示引导文案，
+     页面刚打开时不打扰。 */
+  const permAsked = ref(false)
+  /* 「测试通知」的诊断结果，展示在面板里供截图/复制 */
+  const diag = ref<NotifyDiag | null>(null)
+  const diagBusy = ref(false)
 
   const hasUnread = computed(() => unread.value > 0)
   const badge = computed(() => (unread.value > 99 ? '99+' : String(unread.value)))
@@ -178,12 +189,44 @@ export const useNoticesStore = defineStore('notices', () => {
   }
 
   async function requestPerm(): Promise<NoticePerm> {
-    if (!('Notification' in window)) { perm.value = 'unsupported'; return perm.value }
+    permAsked.value = true
+    // 安全上下文：非 localhost / 非 https 下 Edge 会静默拒绝，先说清楚原因
+    if (typeof window !== 'undefined' && 'isSecureContext' in window && !window.isSecureContext) {
+      perm.value = 'unsupported'
+      devices.toast(NOTICE_PERM_ASK_UNSAFE)
+      return perm.value
+    }
+    if (!('Notification' in window)) {
+      perm.value = 'unsupported'
+      devices.toast(NOTICE_SYSTEM_UNAVAILABLE)
+      return perm.value
+    }
+    // requestPermission 必须在用户点击的同步栈里调用，前面不能插 await
     try {
       perm.value = await Notification.requestPermission()
     } catch { perm.value = 'denied' }
-    if (perm.value === 'granted') devices.toast('已开启浏览器通知')
+    // 每种结果都给反馈：Edge 常静默返回 default，不提示就像「点了没反应」
+    if (perm.value === 'granted') devices.toast(NOTICE_PERM_TOAST_OK)
+    else if (perm.value === 'default') devices.toast(NOTICE_PERM_TOAST_DEFAULT)
+    else devices.toast(NOTICE_PERM_ASK_DENIED)
     return perm.value
+  }
+
+  /** 测试通知：采集浏览器诊断、尝试发送、上报后端日志，结果留在面板里。 */
+  async function runTest(): Promise<NotifyDiag> {
+    diagBusy.value = true
+    let result: NotifyDiag
+    try {
+      result = await runNotifyDiagnostic()
+      diag.value = result
+      // 上报到后端日志，便于拿到 Windows 端的真实证据
+      try {
+        await apiPost('/api/notices/diag', result)
+      } catch { /* 上报失败不影响本地展示 */ }
+      return result
+    } finally {
+      diagBusy.value = false
+    }
   }
 
   function openToast(n: NoticeItem): void { void openNotice(n) }
@@ -202,9 +245,9 @@ export const useNoticesStore = defineStore('notices', () => {
   }
 
   return {
-    list, unread, lastSync, err, loading, toasts, perm,
+    list, unread, lastSync, err, loading, toasts, perm, permAsked, diag, diagBusy,
     hasUnread, badge,
     load, refresh, markAll, markOne, openNotice, openToast, dismiss,
-    requestPerm, startPolling, stopPolling,
+    requestPerm, runTest, startPolling, stopPolling,
   }
 })

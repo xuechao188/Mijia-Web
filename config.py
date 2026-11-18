@@ -12,7 +12,7 @@ import sys
 
 APP_NAME = "Mijia-Web"          # 仓库目录名 / 数据目录名
 APP_NAME_CN = "米家Web版"       # 界面与文档展示名
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 
 PORT = int(os.environ.get("MIHOME_PORT", "8765"))
 # 默认只绑回环：本机使用不需要任何额外防护。

@@ -139,6 +139,11 @@ r = c.post("/api/notices/refresh", json={})
 d = json.loads(r.data)
 ok(d["ok"] and "new" in d, "POST /api/notices/refresh 立刻检查一次")
 
+r = c.post("/api/notices/diag", json={"time": "t", "permission": "granted",
+                                      "verdict": "ok", "ua": "x" * 500})
+d = json.loads(r.data)
+ok(r.status_code == 200 and d["ok"], "POST /api/notices/diag 记录浏览器诊断")
+
 # ---------------------------------------------------------------- 3. 后端不变量
 src = read(path(ROOT, "services", "notices.py"))
 ok("/v2/message/v2/typelist" in src, "用米家消息中心的 typelist 接口拉未读")
@@ -170,6 +175,16 @@ store = read(path(SRC, "stores", "notices.ts"))
 ok("Notification.permission" in store and "Notification.requestPermission" in store,
    "读权限、按需申请权限（必须由用户手势触发）")
 ok("new Notification(" in store and "'mi-notice-'" in store, "推系统级通知并带 tag 去重")
+# Edge 静默拒绝修复：granted/default/denied 三种结果都要给反馈，不能只在允许时提示
+ok("isSecureContext" in store, "非安全上下文先拦截并说明原因")
+seg_req = store.split("async function requestPerm")[1].split("async function openToast")[0]
+for result, toast in [("granted", "NOTICE_PERM_TOAST_OK"),
+                      ("default", "NOTICE_PERM_TOAST_DEFAULT"),
+                      ("else", "NOTICE_PERM_ASK_DENIED")]:
+    ok(toast in seg_req, "权限结果 %s 有明确反馈" % result)
+ok("permAsked.value = true" in seg_req, "点过开启后标记，便于显示引导文案")
+ok("await Notification.requestPermission()" in seg_req and seg_req.find("isSecureContext") < seg_req.find("await Notification.requestPermission()"),
+   "requestPermission 保持在用户手势同步栈，前面不插 await")
 ok("isFresh(n)" in store, "只有新到的才弹，补跑的历史不连环震")
 ok("NOTICE_POLL_MS = 10000" in store, "前端 10 秒轮一次本地接口")
 ok("known.has(n.msg_id)" in store and "known.add(n.msg_id)" in store,
@@ -180,10 +195,41 @@ panel = read(path(SRC, "components", "NoticesPanel.vue"))
 ok("store.markAll()" in panel and "store.refresh()" in panel, "面板有全部已读与立即检查")
 ok("noticeTitle(n)" in panel and "noticeSub(n)" in panel, "面板逐条展示标题与设备/房间")
 ok("store.perm === 'denied'" in panel, "浏览器屏蔽通知时有明确说明")
+ok("NOTICE_PERM_ASK_DEFAULT" in panel and "store.permAsked" in panel,
+   "点过开启仍 default 时显示 Edge 手动开启引导")
 
 toast = read(path(SRC, "components", "NoticeToasts.vue"))
 ok("store.toasts" in toast and "store.dismiss(" in toast, "卡片可关闭、随 store 收起")
 ok("store.requestPerm()" in toast, "卡片里也能一键开系统通知")
+
+# 类型标签筛选：纯逻辑在 panels/notices.ts，UI 在 NoticesPanel.vue
+ok("NOTICE_FILTERS" in panel and "activeFilter" in panel and "visible" in panel,
+   "面板有类型标签与筛选后列表")
+ok(':class="{ active: activeFilter === f.key }"' in panel,
+   "标签单选高亮当前类型")
+ok("v-for=\"n in visible\"" in panel and "counts[f.key]" in panel,
+   "列表用筛选结果、标签显示各类条数")
+ok("noticeCounts" in panel and "filterNotices" in panel,
+   "计数与筛选复用 panels 纯逻辑")
+css = read(path(SRC, "styles", "layout.css"))
+ok(".nt-filter" in css and ".nt-filter .chip" in css, "标签栏样式复用 chip")
+
+# 测试通知 + 诊断日志
+ok("store.runTest()" in panel and "store.diagBusy" in panel, "面板有测试通知按钮与忙碌态")
+ok("store.diag" in panel and "formatDiag(store.diag)" in panel, "面板展示诊断结论与可复制详情")
+ok("async function runTest" in store and "/api/notices/diag" in store,
+   "store 采集诊断并上报后端日志")
+ok("runNotifyDiagnostic" in store, "store 调用浏览器环境诊断")
+diag_src = read(path(SRC, "panels", "notices.ts"))
+ok("export async function runNotifyDiagnostic" in diag_src, "纯逻辑提供诊断采集函数")
+ok("isSecureContext" in diag_src and "navigator.permissions" in diag_src,
+   "诊断覆盖安全上下文与真实权限状态")
+ok("new Notification(" in diag_src and "testSent" in diag_src,
+   "诊断实际尝试发送并记录结果")
+ok("export function formatDiag" in diag_src, "诊断可格式化为可复制文字")
+routes_src = read(path(ROOT, "routes", "notices.py"))
+ok('"/api/notices/diag"' in routes_src and "log.info" in routes_src,
+   "后端 diag 接口把诊断写入日志")
 
 # 灯具切模式后会连带改亮度/色温：写完必须回读
 drawer = read(path(SRC, "components", "DeviceDrawer.vue"))
@@ -241,7 +287,37 @@ push('ageHour', n.noticeAge(1000, 1000 + 7200) === '');
 push('freshIn', n.isFresh({ ts: 1000 }, 1000 + 60) === true);
 push('freshOut', n.isFresh({ ts: 1000 }, 1000 + n.NOTICE_FRESH_S + 1) === false);
 push('freshNoTs', n.isFresh({ ts: 0 }, 2000) === false);
-console.log(JSON.stringify({ total: total + 3, fail: fail }));
+// 类型标签筛选
+const items = [{ msg_id: 1, kind: 6 }, { msg_id: 2, kind: 13 },
+               { msg_id: 3, kind: 13 }, { msg_id: 4, kind: 99 }];
+const cnt = n.noticeCounts(items);
+push('cntAll', cnt.all === 4 && cnt.device === 1 && cnt.scene === 2 && cnt.system === 1);
+push('filterAll', n.filterNotices(items, 'all').length === 4);
+push('filterDevice', n.filterNotices(items, 'device').map(x => x.msg_id).join() === '1');
+push('filterScene', n.filterNotices(items, 'scene').map(x => x.msg_id).join() === '2,3');
+push('filterSystem', n.filterNotices(items, 'system').map(x => x.msg_id).join() === '4');
+push('filterEmpty', n.filterNotices([], 'scene').length === 0);
+push('tagsFour', n.NOTICE_FILTERS.length === 4 && n.NOTICE_FILTERS[0].key === 'all');
+// 诊断：格式化/常量/函数存在性（构造逻辑依赖真实浏览器，另由界面实测）
+const d = { time: 'T', ua: 'UA', origin: 'O', secure: true, hasApi: true,
+  permission: 'granted', queryState: 'granted', testSent: true, testError: '', verdict: 'V' };
+const fmt = n.formatDiag(d);
+push('diagFmt', fmt.includes('权限: granted') && fmt.includes('结论: V') && fmt.includes('T'));
+push('diagFn', typeof n.runNotifyDiagnostic === 'function');
+push('diagConst', n.NOTICE_TEST_TITLE.includes('自检') && !!n.NOTICE_TEST_BODY);
+// 诊断结论按平台给引导：Mac 不显示 Windows 步骤，反之亦然
+const macUA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Edg/157.0.0.0';
+const winUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Edg/157.0.0.0';
+const vMac = n.notifyVerdict(true, true, 'granted', 'granted', true, '', macUA);
+const vWin = n.notifyVerdict(true, true, 'granted', 'granted', true, '', winUA);
+push('verdictMac', vMac.includes('专注模式') && vMac.includes('提醒') && !vMac.includes('Windows'));
+push('verdictWin', vWin.includes('专注助手') && vWin.includes('右下角') && !vWin.includes('专注模式'));
+push('verdictNoPromise', !vMac.includes('自检通知已发出'));
+push('verdictDenied', n.notifyVerdict(true, true, 'denied', 'denied', false, '', macUA).includes('拒绝'));
+push('verdictDefault', n.notifyVerdict(true, true, 'default', 'default', false, '', winUA).includes('静默阻尼'));
+push('hintMac', n.notifyPlatformHint(macUA).includes('右上角时间'));
+push('hintWin', n.notifyPlatformHint(winUA).includes('右下角通知中心'));
+console.log(JSON.stringify({ total: total, fail: fail }));
 '''
     p = subprocess.run(["node", "--experimental-strip-types", "--input-type=module",
                         "-e", probe, str(ROOT), tdir],
@@ -253,7 +329,7 @@ console.log(JSON.stringify({ total: total + 3, fail: fail }));
         if line.startswith("{"):
             payload = json.loads(line)
     ok(p.returncode == 0 and payload.get("fail") == [],
-       "通知纯逻辑 18 项运行期校验通过 %s" % (payload.get("fail") or ""))
+       "通知纯逻辑运行期校验通过 %s" % (payload.get("fail") or ""))
     ok_n[0] += int(payload.get("total", 0))
 
 # README 登记
