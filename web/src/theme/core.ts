@@ -6,12 +6,15 @@
 export type ThemeMode = 'light' | 'dark'
 export type PresetId = 'blue' | 'mint' | 'violet' | 'coral' | 'rose' | 'cyan' | 'amber' | 'custom'
 export type Density = 'standard' | 'comfy' | 'compact'
+/** 背景风格：ambient=氛围渐变光斑；其余为纯色无渐变底色 */
+export type BackgroundId = 'ambient' | 'chalk' | 'linen' | 'graphite' | 'inkblue'
 
 export interface ThemeState {
   mode: ThemeMode
   preset: PresetId
   accent: string
   density: Density
+  background: BackgroundId
 }
 
 export interface StorageLike {
@@ -25,6 +28,7 @@ export const KEYS = {
   preset: 'mi-preset',
   accent: 'mi-accent',
   density: 'mi-density',
+  background: 'mi-background',
   legacyMode: 'mi-theme',
 } as const
 
@@ -54,11 +58,27 @@ export const DENSITIES: ReadonlyArray<{ id: Density; name: string }> = [
   { id: 'compact', name: '紧凑' },
 ]
 
+/** 背景风格：氛围渐变 + 四种纯色无渐变底色。纯色项自带明暗倾向，
+   选中时自动切到对应 mode，避免浅色文字落在深底上。 */
+export const BACKGROUNDS: ReadonlyArray<{
+  id: BackgroundId
+  name: string
+  swatch: string
+  mode: ThemeMode
+}> = [
+  { id: 'ambient', name: '氛围渐变', swatch: 'linear-gradient(135deg,#8fb4ff,#c9a7f5,#7fd8c8)', mode: 'light' },
+  { id: 'chalk', name: '珍珠白', swatch: '#f5f4f1', mode: 'light' },
+  { id: 'linen', name: '暖灰', swatch: '#e9e6df', mode: 'light' },
+  { id: 'graphite', name: '石墨黑', swatch: '#1c1b19', mode: 'dark' },
+  { id: 'inkblue', name: '墨蓝', swatch: '#101a2e', mode: 'dark' },
+]
+
 export const DEFAULT_THEME: ThemeState = {
   mode: 'light',
   preset: 'blue',
   accent: '',
   density: 'standard',
+  background: 'ambient',
 }
 
 export const ACCENT_RE = /^#[0-9a-fA-F]{6}$/
@@ -83,6 +103,10 @@ export function normalizeDensity(v: string | null): Density {
   return DENSITIES.some((d) => d.id === v) ? (v as Density) : DEFAULT_THEME.density
 }
 
+export function normalizeBackground(v: string | null): BackgroundId {
+  return BACKGROUNDS.some((b) => b.id === v) ? (v as BackgroundId) : DEFAULT_THEME.background
+}
+
 export function isValidAccent(v: string | null): v is string {
   return typeof v === 'string' && ACCENT_RE.test(v)
 }
@@ -99,6 +123,7 @@ export function readStoredTheme(storage: StorageLike | null): ThemeState {
     preset: normalizePreset(storage.getItem(KEYS.preset)),
     accent: isValidAccent(accent) ? accent : '',
     density: normalizeDensity(storage.getItem(KEYS.density)),
+    background: normalizeBackground(storage.getItem(KEYS.background)),
   }
 }
 
@@ -108,6 +133,7 @@ export function persistTheme(storage: StorageLike | null, s: ThemeState): void {
   storage.setItem(KEYS.preset, s.preset)
   storage.setItem(KEYS.accent, s.accent)
   storage.setItem(KEYS.density, s.density)
+  storage.setItem(KEYS.background, s.background)
   // 与旧界面互通：旧版读这个键，切回去外观不跳
   storage.setItem(KEYS.legacyMode, s.mode)
 }
@@ -161,6 +187,7 @@ export function applyThemeToDocument(root: HTMLElement | null, s: ThemeState): v
   root.dataset.theme = s.mode
   root.dataset.preset = s.preset
   root.dataset.density = s.density
+  root.dataset.background = s.background
   if (s.preset === 'custom' && isValidAccent(s.accent)) {
     const vars = deriveAccentVars(s.accent, s.mode === 'dark')
     Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v))

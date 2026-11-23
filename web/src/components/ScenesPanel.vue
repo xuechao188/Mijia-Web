@@ -5,7 +5,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { SCENE_EMPTY, dupeIndex, sceneLabel } from '../panels/scenes'
 import { sceneIcon } from '../panels/sceneIcons'
-import { scenePress, sceneSettle, spin } from '../motion'
+import { scenePress, sceneSettle, spin, spinEdge } from '../motion'
 import { usePanelsStore } from '../stores/panels'
 import type { SceneItem } from '../panels/types'
 
@@ -23,13 +23,16 @@ function busy(id: string): boolean { return Boolean(store.sceneBusy[id]) }
 watch(() => store.sceneBusy, () => {
   void nextTick(() => {
     rowEl.value?.querySelectorAll<HTMLElement>('.scene-tile').forEach((tile) => {
-      spin(tile.querySelector('.st-spin'), tile.classList.contains('is-busy'))
+      const on = tile.classList.contains('is-busy')
+      spin(tile.querySelector('.st-spin'), on)
+      spinEdge(tile.querySelector('.cb-edge'), on)
     })
   })
 })
 
 onBeforeUnmount(() => {
   rowEl.value?.querySelectorAll<HTMLElement>('.st-spin').forEach((el) => spin(el, false))
+  rowEl.value?.querySelectorAll<HTMLElement>('.cb-edge').forEach((el) => spinEdge(el, false))
 })
 
 function onDown(s: SceneItem, e: PointerEvent): void {
@@ -61,6 +64,7 @@ async function run(s: SceneItem, e: MouseEvent): Promise<void> {
               :aria-label="'执行场景 ' + sceneLabel(s)"
               @pointerdown="onDown(s, $event)"
               @click="run(s, $event)">
+        <span class="cb-edge" aria-hidden="true"></span>
         <span class="st-ico" v-html="sceneIcon(sceneLabel(s))"></span>
         <span class="st-text">
           <span class="st-name">{{ sceneLabel(s) }}</span>

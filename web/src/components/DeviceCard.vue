@@ -5,12 +5,13 @@
 import { computed, ref } from 'vue'
 import { CATEGORY_LABELS } from '../devices/cards'
 import { svg as iconSvg } from '../devices/icons'
-import { sparkline, switchLabel } from '../devices/readouts'
+import { formatValue, switchLabel } from '../devices/readouts'
 import type { CardModel } from '../devices/content'
 import type { DeviceControl, DeviceView, LiveState } from '../devices/types'
 import { vCount } from '../motion/countup'
 import { useDevicesStore } from '../stores/devices'
 import ControlBusy from './ControlBusy.vue'
+import SparklineChart from './SparklineChart.vue'
 
 const props = defineProps<{ model: CardModel; device: DeviceView }>()
 const emit = defineEmits<{
@@ -89,8 +90,9 @@ function step(c: DeviceControl, delta: number): void {
     dragVals.value = n
   }, 0)
 }
-function chartSvg(points: Array<[number, number]>): string {
-  return sparkline(points, { w: 240, h: 48, color: 'var(--blue)' })
+/* 曲线 hover 数值：格式化函数绑定本机设备，单位/枚举名都跟读数一致 */
+function curveFormat(key: string): (v: number) => string {
+  return (v: number) => formatValue(key, v, props.device)
 }
 </script>
 
@@ -210,8 +212,10 @@ function chartSvg(points: Array<[number, number]>): string {
           <span>{{ model.curves[0].label }}趋势</span>
           <span class="ct-chart-last">{{ model.curves[0].last }}</span>
         </div>
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <div class="ct-chart-svg" v-html="chartSvg(model.curves[0].points)"></div>
+        <div class="ct-chart-svg">
+          <SparklineChart :points="model.curves[0].points" :format="curveFormat(model.curves[0].key)"
+                          :w="240" :h="48" />
+        </div>
       </div>
       <div v-else-if="model.curveHint" class="ct-chart-empty">{{ model.curveHint }}</div>
     </div>

@@ -96,8 +96,15 @@
   font-size: 11px; letter-spacing: 0; color: var(--ink-faint);
 }
 .nav-add {
+  position: relative;
   width: 20px; height: 20px; border-radius: var(--r-xs);
   color: var(--ink-soft); font-size: 15px; line-height: 1;
+}
+/* 视觉仍是 20px，但透明命中区扩到 44×44（无障碍触控目标），
+   不占额外布局空间，避免把侧栏行撑高 */
+.nav-add::after, .nav-del::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: 44px; height: 44px; transform: translate(-50%, -50%);
 }
 .nav-add:hover { color: var(--blue); background: var(--blue-soft); }
 .room-item {
@@ -125,6 +132,7 @@
 .nav-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav-count { flex: none; font-size: 11px; color: var(--ink-faint); }
 .nav-del {
+  position: relative;
   flex: none; width: 20px; height: 20px; border-radius: var(--r-xs);
   color: var(--ink-faint); font-size: 14px; line-height: 1; opacity: 0;
   transition: opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease),
@@ -132,6 +140,10 @@
 }
 .room-item:hover .nav-del { opacity: 1; }
 .nav-del:hover { color: var(--red-text); background: var(--red-soft); }
+/* 触屏设备没有 hover：删除按钮不能只在悬停时出现，否则永远点不到 */
+@media (hover: none) {
+  .nav-del { opacity: .6; }
+}
 
 /* ── 顶栏 ─────────────────────────────────────────────────────── */
 .topbar {
@@ -154,15 +166,6 @@
 .top-home { display: none; flex: none; }
 /* 动作组统一收在顶栏右端：主题 / 刷新 / 退出只此一处，侧栏不再重复 */
 .top-right { margin-left: auto; display: flex; align-items: center; gap: 12px; min-width: 0; }
-/* 状态读数宁可省略号也不折行：折行会把整条顶栏顶高 */
-.top-ping {
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  flex: 0 1 auto; min-width: 0;
-}
-/* 1180 以下顶栏只剩几像素余量：读数整条让位，不给半截省略号 */
-@media (max-width: 1179px) {
-  .top-ping { display: none; }
-}
 .top-actions { position: relative; display: flex; align-items: center; gap: 8px; flex: none; }
 /* 外观面板从按钮下方展开、右缘对齐动作组，浮层不挤动顶栏 */
 .top-actions .tp {
@@ -193,42 +196,55 @@
 .device-card.sz-sm .dc-name { font-size: 13px; }
 
 .device-card {
-  --cat: #8a8983;
+  --cat: var(--cat-generic);
   position: relative; overflow: hidden;
-  padding: 12px; border: 1px solid var(--line-strong);
+  padding: 12px; border: 1px solid var(--card-line);
   border-radius: var(--r-md);
-  background: var(--surface);
-  box-shadow: var(--e1);
+  background: var(--card-bg);
+  -webkit-backdrop-filter: blur(var(--card-blur)) saturate(var(--card-sat));
+  backdrop-filter: blur(var(--card-blur)) saturate(var(--card-sat));
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--e-color-1);
   cursor: grab;
   transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease),
-              box-shadow var(--t-fast) var(--ease);
+              box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+/* 顶部彩线：与 .card-surface::before 同源，设备卡自带定位上下文 */
+.device-card::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+  background: var(--top-line); pointer-events: none; z-index: 1;
 }
 .device-card:active { cursor: grabbing; }
-.device-card:hover { border-color: var(--line-strong); box-shadow: var(--e2); }
+/* VIVID hover：只做 2px 抬升 + 主色描边与光晕；不做旋转/缩放，
+   避免卡片里的图表/图标被 transform 扭曲（v2 三版验证过的教训）。 */
+.device-card:hover {
+  transform: translateY(-2px);
+  border-color: rgb(var(--tone-rgb) / .42);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--e-color-2);
+}
 .device-card.on {
-  border-color: var(--line-strong);
-  background: var(--surface-solid);
+  border-color: rgb(var(--tone-rgb) / .32);
+  background: var(--card-bg-strong);
 }
 .device-card.offline { opacity: .6; }
 .device-card.dragging { opacity: .4; pointer-events: none; }
 .device-card.drop-before { box-shadow: -3px 0 0 0 var(--blue), var(--e1); }
 
-/* 类别只用中性台阶区分。图标形状负责扫视，颜色不再抢注意力。
-   这组台阶不承载开/关语义，因此不跟主色预设走。 */
-.device-card[data-category="light"]          { --cat: #8a8983; }
-.device-card[data-category="outlet"]         { --cat: #7d7c76; }
-.device-card[data-category="switch"]         { --cat: #85847e; }
-.device-card[data-category="climate"]        { --cat: #777670; }
-.device-card[data-category="climate-sensor"] { --cat: #8f8e88; }
-.device-card[data-category="sensor"]         { --cat: #8f8e88; }
-.device-card[data-category="purifier"]       { --cat: #7a7973; }
-.device-card[data-category="curtain"]        { --cat: #92918b; }
-.device-card[data-category="camera"]         { --cat: #6f6e69; }
-.device-card[data-category="cleaner"]        { --cat: #83827c; }
-.device-card[data-category="appliance"]      { --cat: #7f7e78; }
-.device-card[data-category="hub"]            { --cat: #777670; }
-.device-card[data-category="ir"]             { --cat: #6b6a65; }
-.device-card[data-category="generic"]        { --cat: #8a8983; }
+/* VIVID：14 类设备重新上色（色值见 tokens.css，深浅两档）。
+   这组是类别识别色，不承载开/关语义，因此不跟主色预设走。 */
+.device-card[data-category="light"]          { --cat: var(--cat-light); }
+.device-card[data-category="outlet"]         { --cat: var(--cat-outlet); }
+.device-card[data-category="switch"]         { --cat: var(--cat-switch); }
+.device-card[data-category="climate"]        { --cat: var(--cat-climate); }
+.device-card[data-category="climate-sensor"] { --cat: var(--cat-climate-sensor); }
+.device-card[data-category="sensor"]         { --cat: var(--cat-sensor); }
+.device-card[data-category="purifier"]       { --cat: var(--cat-purifier); }
+.device-card[data-category="curtain"]        { --cat: var(--cat-curtain); }
+.device-card[data-category="camera"]         { --cat: var(--cat-camera); }
+.device-card[data-category="cleaner"]        { --cat: var(--cat-cleaner); }
+.device-card[data-category="appliance"]      { --cat: var(--cat-appliance); }
+.device-card[data-category="hub"]            { --cat: var(--cat-hub); }
+.device-card[data-category="ir"]             { --cat: var(--cat-ir); }
+.device-card[data-category="generic"]        { --cat: var(--cat-generic); }
 
 /* 卡片头部：类型图标 + 两行名称 + 状态 + 流内开关 */
 .dc-head { display: flex; align-items: flex-start; gap: 8px; }
@@ -304,20 +320,33 @@
   position: absolute; inset: 0;
   background: var(--overlay);
 }
+/* VIVID：详情弹窗与首页卡片同款玻璃质感 —— 半透明主色玻璃 + 强模糊 +
+   主色描边 + 顶部彩线。深浅两模式由令牌自动适配。 */
 .sheet {
   position: relative;
   display: flex; flex-direction: column;
   width: min(920px, 100%); max-height: min(86vh, 900px);
-  border: 1px solid var(--line-strong); border-radius: var(--r-lg);
+  border: 1px solid rgb(var(--tone-rgb) / .28); border-radius: var(--r-lg);
+  /* 用更实的浮层头玻璃：详情抽屉盖在统计条上，卡片级透明度(.72)会让底下
+     在线率的环形数字透上来干扰阅读，这里压到 .90/.92 既挡住又不失玻璃感 */
+  background: var(--glass-head);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  backdrop-filter: blur(28px) saturate(1.6);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--e-color-2);
   overflow: hidden;
   /* 进出由动效层（drawerEnter/drawerLeave）驱动，CSS 不再自己播，
      否则两套位移会叠在一起 */
+}
+/* 顶部彩线：与设备卡同源，落在 sheet 上沿 */
+.sheet::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: var(--top-line); pointer-events: none; z-index: 2;
 }
 .sheet-head {
   flex: none;
   display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
   padding: 18px 20px 14px;
-  background: var(--glass-head);
+  background: rgb(var(--tone-rgb) / .04);
   border-bottom: 1px solid var(--glass-line);
 }
 .sheet-head h3 { font-size: 17px; font-weight: 500; color: var(--ink); }
@@ -331,7 +360,11 @@
   gap: 12px 16px; align-items: start;
 }
 .sheet-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.dr-panel { padding: 16px; border-radius: var(--r-md); }
+/* VIVID：弹窗内面板在卡片玻璃之上再叠一层极淡主色底，做出层次 */
+.dr-panel {
+  padding: 16px; border-radius: var(--r-md);
+  background: rgb(var(--tone-rgb) / .035);
+}
 /* 控制面板：控制执行中的进度遮罩以此为定位基准 */
 .ctl-panel { position: relative; }
 .ctrl-row { margin-bottom: 16px; }
@@ -542,9 +575,13 @@
 .nt-err { margin-top: 4px; color: var(--red-text); }
 
 /* 天气卡：与设备卡共用固定行高。底色保持中性，颜色留给温度与曲线 */
+/* VIVID：天气卡与设备卡同款玻璃面，网格主次一致
+   （天气卡同时带 .device-card，彩线与定位由那边提供，这里只覆盖底色） */
 .weather-card {
   display: flex; flex-direction: column;
-  background: var(--surface-solid);
+  background: var(--card-bg);
+  border-color: var(--card-line);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--e-color-1);
 }
 .wc-head { display: flex; align-items: center; gap: 8px; min-height: 24px; }
 .wc-sizes { display: flex; gap: 4px; margin-left: auto; flex: 0 0 auto; }
@@ -586,7 +623,6 @@
   .rail { display: none; }
   .topbar { padding: 0 16px; gap: 8px; flex-wrap: wrap; height: auto; min-height: var(--topbar-h); }
   .topbar .tabs { margin-left: 0; }
-  .top-ping { display: none; }
   /* 侧栏收起后三件事一起做：家庭搬到顶栏最左、面包屑让位、菜单向左展开不越界 */
   .top-home { display: block; }
   .top-home .hs { margin-right: 0; }
@@ -603,5 +639,16 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .device-card { transition: none; }
+  .device-card:hover { transform: none; }
   .nav-slider { transition: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .device-card { background: var(--surface-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .sheet { background: var(--float-bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .stat-strip { background: var(--float-bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .device-card { background: var(--card-bg-strong); }
+  .sheet { background: var(--float-bg); }
+  .stat-strip { background: var(--float-bg); }
 }

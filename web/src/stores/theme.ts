@@ -2,12 +2,14 @@ import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import {
   ACCENT_RE,
+  BACKGROUNDS,
   DEFAULT_THEME,
   applyThemeToDocument,
   persistTheme,
   readStoredTheme,
   normalizeDensity,
   normalizeMode,
+  type BackgroundId,
   type Density,
   type PresetId,
   type StorageLike,
@@ -29,12 +31,14 @@ export const useThemeStore = defineStore('theme', () => {
   const preset = ref<PresetId>(saved.preset)
   const accent = ref<string>(saved.accent)
   const density = ref<Density>(saved.density)
+  const background = ref<BackgroundId>(saved.background)
 
   const state = computed<ThemeState>(() => ({
     mode: mode.value,
     preset: preset.value,
     accent: accent.value,
     density: density.value,
+    background: background.value,
   }))
 
   const isCustom = computed(() => preset.value === 'custom')
@@ -51,6 +55,13 @@ export const useThemeStore = defineStore('theme', () => {
   function toggleMode(): void { mode.value = mode.value === 'dark' ? 'light' : 'dark' }
   function setPreset(v: PresetId): void { preset.value = v }
   function setDensity(v: Density): void { density.value = normalizeDensity(v) }
+  function setBackground(v: BackgroundId): void {
+    background.value = v
+    // 切纯色底色时自动切到该底色适配的明暗，避免浅字落深底看不清；
+    // 氛围渐变则由用户自己用「模式」控制。
+    const item = BACKGROUNDS.find((b) => b.id === v)
+    if (item && v !== 'ambient') mode.value = item.mode
+  }
   function setAccent(hex: string): void {
     if (!ACCENT_RE.test(hex)) return
     accent.value = hex
@@ -61,6 +72,7 @@ export const useThemeStore = defineStore('theme', () => {
     preset.value = DEFAULT_THEME.preset
     accent.value = DEFAULT_THEME.accent
     density.value = DEFAULT_THEME.density
+    background.value = DEFAULT_THEME.background
   }
 
   // 首帧也要应用一次：内联脚本只预涂了 data-*，custom 主色的
@@ -70,7 +82,7 @@ export const useThemeStore = defineStore('theme', () => {
   watch(state, apply)
 
   return {
-    mode, preset, accent, density, state, isCustom,
-    setMode, toggleMode, setPreset, setAccent, setDensity, reset, apply,
+    mode, preset, accent, density, background, state, isCustom,
+    setMode, toggleMode, setPreset, setAccent, setDensity, setBackground, reset, apply,
   }
 })

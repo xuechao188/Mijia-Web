@@ -3,7 +3,7 @@
  * + 每 3 小时采样条 + 城市/尺寸设置。城市与尺寸都只存本机，不改后端配置。
  */
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { sparkline } from '../devices/readouts'
+import SparklineChart from './SparklineChart.vue'
 import {
   SIZES, SIZE_LABELS, SIZE_TITLES, WEATHER_NOTE, WEATHER_FALLBACK,
   drawerReadouts, hourStrip, hourlyLabels, hourlySeries, iconSvg, kindOf,
@@ -18,9 +18,7 @@ const readouts = computed(() => drawerReadouts(w.value))
 const points = computed(() => hourlySeries(w.value))
 const labels = computed(() => hourlyLabels(w.value))
 const range = computed(() => tempRange(w.value))
-const curve = computed(() => sparkline(points.value, {
-  w: 320, h: 68, color: 'var(--accent)',
-}))
+const tempFormat = (v: number): string => tempText(v, 0) + '°'
 const hours = computed(() => hourStrip(w.value))
 const rangeText = computed(() =>
   tempText(range.value.min, 0) + '° / ' + tempText(range.value.max, 0) + '°')
@@ -110,7 +108,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                   <span>未来 {{ (w.hourly || []).length }} 小时 · {{ labels[0] }} 起</span>
                   <span class="ct-chart-last">{{ rangeText }}</span>
                 </div>
-                <div class="ct-chart-svg tall" v-html="curve"></div>
+                <div class="ct-chart-svg tall">
+                  <SparklineChart :points="points" :format="tempFormat" time-mode="index"
+                                  :labels="labels" :w="320" :h="68" color="var(--accent)" />
+                </div>
                 <div class="ct-chart-cap">
                   <span>{{ labels[0] }}</span><span>{{ labels[1] }}</span>
                 </div>

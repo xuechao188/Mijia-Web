@@ -21,19 +21,16 @@ import { useAuthStore } from './stores/auth'
 import { useDevicesStore } from './stores/devices'
 import { usePanelsStore } from './stores/panels'
 import { useNoticesStore } from './stores/notices'
-import { breathe, drawerEnter, drawerLeave, pageEnter, pageLeave, themeSweep } from './motion'
+import { drawerEnter, drawerLeave, pageEnter, pageLeave, themeSweep } from './motion'
 
-type Ping = { ok: boolean; version: string; logged_in: boolean }
+type Ping = { ok: boolean; version: string }
 
-const pingText = ref('正在连接后端…')
 const appVersion = ref('')
-const online = ref(false)
 /* 外观面板挂在顶栏右侧的动作组里，点按钮外的任何地方或按 Esc 都收起 */
 const themeOpen = ref(false)
 /* 关于应用弹窗：点顶栏版本号打开 */
 const aboutOpen = ref(false)
 const actionsEl = ref<HTMLElement | null>(null)
-const pingEl = ref<HTMLElement | null>(null)
 /* 通知排在日志前面：设备自己报的事比操作留痕更值得先看 */
 const tabNames: Array<[string, string]> = [
   ['devices', '设备'], ['scenes', '场景'], ['automations', '自动化'],
@@ -53,11 +50,9 @@ onMounted(async () => {
   try {
     const res = await fetch('/api/ping')
     const data = (await res.json()) as Ping
-    online.value = Boolean(data.ok)
     appVersion.value = data.version || ''
-    pingText.value = `后端已连通 · ${data.logged_in ? '已登录' : '未登录'}`
   } catch {
-    pingText.value = '后端未连通（主题层仍可独立渲染）'
+    // 拿不到版本号不影响主流程，版本号按钮保持禁用态即可
   }
   await auth.bootstrap()
 })
@@ -68,8 +63,6 @@ watch(() => auth.phase, (phase) => {
     void panels.bootstrap()
     panels.startPolling()
     notices.startPolling()
-    // 主壳这时候才挂上，停摆呼吸要等元素出现后再按连通态决定
-    void nextTick(() => breathe(pingEl.value, !online.value))
   } else {
     store.stopPolling()
     panels.stopPolling()
@@ -94,9 +87,6 @@ watch(() => [theme.mode, theme.preset, theme.accent], () => {
     themeSweep(stage || '#faf9f7')
   })
 })
-
-/* 后端未连通时状态点慢慢呼吸，连通后立刻停（停摆 vs 有结果） */
-watch(online, (v) => breathe(pingEl.value, !v))
 
 /* 自动化 / 天气抽屉由 store 的布尔量控制，进出交给动效层 */
 function onDrawerEnter(el: Element): void {
@@ -136,6 +126,16 @@ onUnmounted(() => {
 
   <!-- ④ 主应用外壳 + ⑥ 四个面板：侧栏 + 顶栏 + 内容区 + 三种互斥抽屉 -->
   <div v-else class="stage">
+    <!-- VIVID 流动光晕：v2 demo 同款独立图层，三块高饱和光斑 + 缓慢漂移 + 细网格。
+         纯装饰，固定在视口底层，不接管任何交互。 -->
+    <div class="ambient" aria-hidden="true">
+      <i class="blob b1"></i>
+      <i class="blob b2"></i>
+      <i class="blob b3"></i>
+      <i class="blob b4"></i>
+      <div class="grid-bg"></div>
+    </div>
+
     <Sidebar />
 
     <main class="main">
@@ -156,7 +156,6 @@ onUnmounted(() => {
           </button>
         </nav>
         <div class="top-right">
-          <span ref="pingEl" class="top-ping mono" :class="{ 'is-on': online }">{{ pingText }}</span>
           <div ref="actionsEl" class="top-actions">
             <button type="button" class="btn sm ghost top-version" :disabled="!appVersion"
                     :title="`关于应用 · v${appVersion}`" aria-haspopup="dialog"
@@ -211,7 +210,60 @@ onUnmounted(() => {
 <style scoped>
 /* ② 的主题面板在侧栏里以浮层出现；这里保留 scoped 外壳的最低限度约束，
    组件与网格的细节样式一律写在第 4-7 层，避免两套来源打架。 */
-.stage { min-height: 100dvh; background: var(--stage); }
+/* VIVID：全站主色氛围光。两枚 radial 光斑固定在视口两角，
+   颜色由 --ambient-a/b（跟随主色预设）派生；底下的实色仍是 --stage。
+   背景附着在 .stage 上不随内容滚动，长页面也始终有氛围。 */
+.stage {
+  min-height: 100dvh;
+  background-color: var(--stage);
+  isolation: isolate; /* 光斑层 z-index:0 与内容分层，不靠大规模改组件 z-index */
+}
+/* VIVID 光晕层：三块大光斑 blur 后缓慢漂移，颜色由主题色派生，
+   切主题时自动变色。fixed 铺满视口、pointer-events:none 不挡交互。 */
+.ambient {
+  position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+}
+.blob {
+  position: absolute; border-radius: 50%; filter: blur(90px);
+  opacity: var(--blob-op); will-change: transform;
+}
+.blob.b1 {
+  width: 640px; height: 640px; top: -220px; left: -180px;
+  background: var(--blob-a); animation: drift1 18s ease-in-out infinite alternate;
+}
+.blob.b2 {
+  width: 560px; height: 560px; top: 20%; right: -200px;
+  background: var(--blob-b); animation: drift2 22s ease-in-out infinite alternate;
+}
+.blob.b3 {
+  width: 520px; height: 520px; bottom: -200px; left: 30%;
+  background: var(--blob-c); animation: drift3 26s ease-in-out infinite alternate;
+}
+/* b4：顶部居中的横向光斑，专门覆盖顶栏那一带，避免顶部出现纯色断层。
+   用主色而非粉紫撞色，并单独调低透明度，让顶栏是淡蓝紫而非突兀的粉带。 */
+.blob.b4 {
+  width: 860px; height: 420px; top: -240px; left: 38%;
+  background: var(--blob-a); opacity: calc(var(--blob-op) * .7);
+  animation: drift1 24s ease-in-out infinite alternate;
+}
+.grid-bg {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at top, #000, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse at top, #000, transparent 78%);
+}
+@keyframes drift1 { to { transform: translate(120px, 80px) scale(1.15); } }
+@keyframes drift2 { to { transform: translate(-140px, 60px) scale(1.1); } }
+@keyframes drift3 { to { transform: translate(80px, -100px) scale(1.2); } }
+@media (prefers-reduced-transparency: reduce) {
+  .ambient { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .blob { animation: none; }
+}
 .main { min-height: 100dvh; margin-left: var(--rail-w); display: flex; flex-direction: column; }
 /* 内容区铺满可用宽度：高分屏不再因 max-width 上限而在右侧留白。
    设备网格是 auto-fill minmax(184px,1fr)、统计条是 1fr 弹性列，

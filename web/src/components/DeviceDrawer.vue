@@ -6,11 +6,12 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { categoryOf, CATEGORY_LABELS, sizeOf } from '../devices/cards'
 import { optionLabel } from '../devices/labels'
-import { curveEntries, formatValue, labelOf, productLabel, readoutEntries, sparkline, switchLabel } from '../devices/readouts'
+import { curveEntries, formatValue, labelOf, productLabel, readoutEntries, switchLabel } from '../devices/readouts'
 import type { DeviceControl, DeviceView, Size } from '../devices/types'
 import CameraPanel from './CameraPanel.vue'
 import CapDialog from './CapDialog.vue'
 import ControlBusy from './ControlBusy.vue'
+import SparklineChart from './SparklineChart.vue'
 import IrPanel from './IrPanel.vue'
 import { drawerEnter, drawerLeave } from '../motion'
 import { vCount } from '../motion/countup'
@@ -134,8 +135,8 @@ async function pickEnum(c: DeviceControl, v: unknown): Promise<void> {
   if (!done) return
   rangeVals.value = {}
 }
-function chartSvg(points: Array<[number, number]>): string {
-  return sparkline(points, { w: 320, h: 68, color: 'var(--blue)' })
+function curveFormat(key: string): (v: number) => string {
+  return (v: number) => formatValue(key, v, d.value)
 }
 function extrema(pts: Array<[number, number]>, key: string): string {
   const nums = pts.map((p) => p[1])
@@ -247,8 +248,10 @@ async function toggleGroup(id: string, inside: boolean): Promise<void> {
                 <span>{{ c.label }} · 当前 {{ c.last }}</span>
                 <span class="ct-chart-last">{{ extrema(c.points, c.key) }}</span>
               </div>
-              <!-- eslint-disable-next-line vue/no-v-html -->
-              <div class="ct-chart-svg tall" v-html="chartSvg(c.points)"></div>
+              <div class="ct-chart-svg tall">
+                <SparklineChart :points="c.points" :format="curveFormat(c.key)"
+                                :w="320" :h="68" />
+              </div>
             </div>
           </div>
 

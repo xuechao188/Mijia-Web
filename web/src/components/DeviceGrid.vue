@@ -7,6 +7,7 @@ import type { CardModel } from '../devices/content'
 import { parseKey } from '../devices/groups'
 import DeviceCard from './DeviceCard.vue'
 import WeatherCard from './WeatherCard.vue'
+import GaugeRing from './GaugeRing.vue'
 import { captureRects, flipCards, releaseCards } from '../motion'
 import { useDevicesStore } from '../stores/devices'
 import { usePanelsStore } from '../stores/panels'
@@ -152,12 +153,10 @@ function onDrop(e: DragEvent): void {
         <b class="stat-v">{{ g.count }}</b>
       </button>
       <div class="stat-cell is-rate">
-        <span class="stat-k">在线率</span>
+        <GaugeRing :value="onlineRate" :size="44" role="img" :aria-label="'在线率 ' + onlineRate + '%'" />
         <div class="stat-rate">
-          <b class="stat-v sm">{{ onlineRate }}<i class="stat-u">%</i></b>
-          <span class="stat-track" role="img" :aria-label="'在线率 ' + onlineRate + '%'">
-            <span class="stat-bar" :style="{ width: onlineRate + '%' }"></span>
-          </span>
+          <span class="stat-k">设备在线率</span>
+          <b class="stat-v sm">{{ store.stats.online }}<i class="stat-u">/ {{ store.stats.total }} 台</i></b>
         </div>
       </div>
     </div>

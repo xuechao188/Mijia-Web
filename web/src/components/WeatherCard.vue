@@ -3,7 +3,7 @@
  * 只把 DOM 拼装换成模板；v-html 仅用于本地常量生成的 SVG 字符串。
  */
 import { computed } from 'vue'
-import { sparkline } from '../devices/readouts'
+import SparklineChart from './SparklineChart.vue'
 import {
   FIELDS, SIZES, SIZE_LABELS, SIZE_TITLES, fieldsFor, hourlyLabels,
   hourlySeries, iconSvg, kindOf, tempRange, tempText, weatherCardClass,
@@ -24,9 +24,7 @@ const hasHourly = computed(() => fields.value.includes('hourly'))
 const points = computed(() => hourlySeries(props.w))
 const labels = computed(() => hourlyLabels(props.w))
 const range = computed(() => tempRange(props.w))
-const curve = computed(() => sparkline(points.value, {
-  w: 240, h: 48, color: 'var(--accent)',
-}))
+const tempFormat = (v: number): string => tempText(v, 0) + '°'
 const chartCap = computed(() =>
   '未来 ' + ((props.w && props.w.hourly) || []).length + ' 小时 · ' + labels.value[0] + ' 起')
 const rangeText = computed(() =>
@@ -68,7 +66,10 @@ const rangeText = computed(() =>
           <span>{{ chartCap }}</span>
           <span class="ct-chart-last">{{ rangeText }}</span>
         </div>
-        <div class="ct-chart-svg" v-html="curve"></div>
+        <div class="ct-chart-svg">
+          <SparklineChart :points="points" :format="tempFormat" time-mode="index"
+                          :labels="labels" :w="240" :h="48" color="var(--accent)" />
+        </div>
         <div class="ct-chart-cap">
           <span>{{ labels[0] }}</span><span>{{ labels[1] }}</span>
         </div>

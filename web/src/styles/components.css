@@ -69,7 +69,18 @@
 .field[type="search"]::-webkit-search-cancel-button { cursor: pointer; }
 
 /* ── 顶部标签页 ───────────────────────────────────────────────── */
-.tabs { display: flex; align-items: center; gap: 4px; }
+.tabs { display: flex; align-items: center; gap: 4px; min-width: 0; }
+/* 窄屏标签栏可横向滚动，不把顶栏挤到换行/溢出 */
+@media (max-width: 760px) {
+  .tabs {
+    flex: 1 1 auto;
+    overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 0 0 auto; padding: 0 12px; }
+}
 .tab {
   height: var(--control-h-sm); padding: 0 16px; border-radius: var(--r-sm);
   border: 1px solid var(--line-strong); background: var(--input-bg);
@@ -242,7 +253,9 @@
 .st-ico {
   flex: 0 0 36px; width: 36px; height: 36px; border-radius: 10px;
   display: grid; place-items: center;
-  border: 1px solid var(--line); background: var(--groove-bg); color: var(--ink-muted);
+  border: 1px solid var(--card-line);
+  background: rgb(var(--tone-rgb) / .07);
+  color: var(--blue);
   transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease),
               border-color var(--t-fast) var(--ease);
 }
@@ -277,6 +290,22 @@
   background: var(--blue);
 }
 
+/* VIVID：场景执行中的四周彩色旋转描边（与设备卡 ControlBusy 同一套，
+   角度由 motion.spinEdge 驱动，颜色跟随主色预设）。仅在 is-busy 时显现。 */
+.scene-tile .cb-edge {
+  position: absolute; inset: 0; z-index: 3;
+  border-radius: inherit; padding: 2.5px;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--t-fast) var(--ease);
+  background: conic-gradient(from var(--ang),
+    transparent 0deg,
+    var(--spin-c1) 50deg, var(--spin-c2) 110deg,
+    var(--spin-c3) 170deg, var(--spin-c1) 230deg,
+    var(--spin-c2) 290deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.scene-tile.is-busy .cb-edge { opacity: 1; }
 /* 执行中：箭头换成小转圈，砖块不再随 hover 抬起，避免看起来「还能点」 */
 .scene-tile:disabled { opacity: 1; cursor: progress; }
 .st-spin {

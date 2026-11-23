@@ -13,6 +13,7 @@
     r.dataset.theme = (localStorage.getItem('mi-mode') || localStorage.getItem('mi-theme')) === 'dark' ? 'dark' : 'light';
     r.dataset.preset = localStorage.getItem('mi-preset') || 'blue';
     r.dataset.density = localStorage.getItem('mi-density') || 'standard';
+    r.dataset.background = localStorage.getItem('mi-background') || 'ambient';
   } catch (e) { /* 隐私模式下用浅色默认值 */ }
 })();
 </script>

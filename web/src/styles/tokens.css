@@ -69,7 +69,7 @@
      阅读面（卡片、表格、面板）仍是实色，玻璃不进内容区。 */
   --glass-bg: rgba(250, 249, 247, .66);
   --glass-bg-strong: rgba(250, 249, 247, .70);
-  --glass-rail: rgba(247, 246, 243, .74);
+  --glass-rail: rgba(247, 246, 243, .18);
   --glass-head: rgba(250, 249, 247, .90);
   --glass-menu: rgba(250, 249, 247, .97);
   --glass-hi: rgba(255, 255, 255, .72);
@@ -190,7 +190,7 @@
   --float-inset: 0 0 0 0 transparent;
   --glass-bg: rgba(28, 27, 24, .64);
   --glass-bg-strong: rgba(28, 27, 24, .74);
-  --glass-rail: rgba(16, 15, 14, .76);
+  --glass-rail: rgba(16, 15, 14, .2);
   --glass-head: rgba(28, 27, 24, .92);
   --glass-menu: rgba(28, 27, 24, .96);
   --glass-hi: rgba(255, 255, 255, .08);
@@ -236,6 +236,8 @@
 
 /* 需要被连续补间的自定义属性必须注册，inherits: false 避免打脏后代 */
 @property --fill { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+/* VIVID：控制中描边环的旋转角，交给 motion 层补间 */
+@property --ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
 
 /* ============================================================
    本项目扩展：7 套色彩预设 × 浅 / 深 × 自定义主色
@@ -281,4 +283,106 @@ html[data-theme="dark"][data-preset]:not([data-preset="custom"]) {
   --focus: rgb(var(--tone-rgb) / .85);
   --accent-soft: rgb(var(--tone-rgb) / .13);
   --accent-soft-2: rgb(var(--tone-rgb) / .24);
+}
+
+/* ============================================================
+   VIVID 视觉层（2026-11 全站重设计）
+   ------------------------------------------------------------
+   在哑光令牌之上叠加彩色氛围、玻璃卡片与彩色阴影，把 v2 demo 的
+   视觉语言带进全站。设计约束：
+   1. 只覆盖令牌值，不改令牌名 —— 组件层零改动即可换肤；
+   2. 氛围光/描边/阴影一律由 --tone-rgb 派生，切 7 套预设时全站
+      跟着变（配色从「只改强调色」升级为「改整个界面氛围」），
+      用户已存的 data-preset 偏好天然生效、不失效；
+   3. 类别色重新上色，14 类固定色相、深浅两档亮度；
+   4. reduced-transparency / 无 backdrop-filter 均有实色降级。
+   ============================================================ */
+
+:root {
+  /* 彩色氛围光：两枚大光斑，颜色跟随主色预设 */
+  --ambient-a: rgb(var(--tone-rgb) / .20);
+  --ambient-b: rgb(var(--tone-rgb) / .10);
+  /* VIVID 流动光晕（v2 demo 同款）：三块高饱和光斑的实色，全部由主色派生，
+     切 7 套预设或自定义主色时自动撞色漂移；透明度/网格线分浅深两档。 */
+  --blob-a: var(--tone);
+  --blob-b: color-mix(in srgb, var(--tone) 45%, #ff2e88);
+  --blob-c: color-mix(in srgb, var(--tone) 45%, #00d4ff);
+  --blob-op: .34;
+  --grid-line: rgb(20 25 50 / .045);
+  /* 侧栏改成半透明玻璃，让它也透出底下铺满视口的光斑，整页渐变贯通。
+     保留一档较低透明度，保证导航文字仍清晰可读。 */
+  --rail-bg: rgb(255 255 255 / .06);
+  /* 卡片玻璃参数 */
+  --card-blur: 20px;
+  --card-sat: 1.5;
+  --card-bg: rgb(255 255 255 / .58);
+  --card-bg-strong: rgb(255 255 255 / .72);
+  --card-line: rgb(255 255 255 / .72);
+  /* 彩色阴影：主色的低透明度投影，替换原来的纯中性深影 */
+  --e-color-1: 0 2px 6px rgb(var(--tone-rgb) / .07), 0 12px 28px -12px rgb(var(--tone-rgb) / .20);
+  --e-color-2: 0 4px 10px rgb(var(--tone-rgb) / .10), 0 20px 44px -16px rgb(var(--tone-rgb) / .28);
+  /* 顶部彩线：玻璃卡片上沿那一道渐变笔触，跟随主色 */
+  --top-line: linear-gradient(90deg, transparent, rgb(var(--tone-rgb) / .85) 22%, rgb(var(--tone-rgb) / .35) 68%, transparent);
+  /* 控制中旋转描边三色：主色 + 两枚互补邻色，随预设漂移 */
+  --spin-c1: rgb(var(--tone-rgb) / .95);
+  --spin-c2: color-mix(in srgb, rgb(var(--tone-rgb)) 55%, #ff5fa2);
+  --spin-c3: color-mix(in srgb, rgb(var(--tone-rgb)) 55%, #37d9c8);
+}
+
+:root[data-theme="dark"] {
+  --ambient-a: rgb(var(--tone-rgb) / .16);
+  --ambient-b: rgb(var(--tone-rgb) / .08);
+  --blob-op: .5;
+  --grid-line: rgb(255 255 255 / .028);
+  --rail-bg: rgb(16 15 14 / .18);
+  --card-bg: rgb(30 29 34 / .52);
+  --card-bg-strong: rgb(34 33 40 / .66);
+  --card-line: rgb(255 255 255 / .10);
+  --e-color-1: 0 2px 8px rgb(0 0 0 / .40), 0 12px 30px -10px rgb(var(--tone-rgb) / .24);
+  --e-color-2: 0 4px 12px rgb(0 0 0 / .48), 0 22px 48px -14px rgb(var(--tone-rgb) / .34);
+  --top-line: linear-gradient(90deg, transparent, rgb(var(--tone-rgb) / .95) 22%, rgb(var(--tone-rgb) / .45) 68%, transparent);
+}
+
+/* 类别重新上色：固定色相，深浅两档亮度。只改图标/状态点的 --cat，
+   不铺到整卡背景，避免 14 类设备把界面变成调色盘。 */
+:root {
+  --cat-light: #e8912d;   --cat-outlet: #8a6cf0;  --cat-switch: #3f9d6d;
+  --cat-climate: #2f8fe0; --cat-climate-sensor: #38a0b5; --cat-sensor: #6c74d8;
+  --cat-purifier: #2aa58a; --cat-curtain: #d06a9a; --cat-camera: #5867d8;
+  --cat-cleaner: #d4803a; --cat-appliance: #c96a5a; --cat-hub: #7a6ad0;
+  --cat-ir: #b05fae; --cat-generic: #7d8370;
+}
+:root[data-theme="dark"] {
+  --cat-light: #ffc46b;   --cat-outlet: #b6a4ff;  --cat-switch: #6fd6a0;
+  --cat-climate: #82c4ff; --cat-climate-sensor: #7cd4e8; --cat-sensor: #aab2ff;
+  --cat-purifier: #6fe0c2; --cat-curtain: #ff9dc6; --cat-camera: #9aa8ff;
+  --cat-cleaner: #ffb277; --cat-appliance: #f29a88; --cat-hub: #b4a6ff;
+  --cat-ir: #e59fe2; --cat-generic: #b6bb9f;
+}
+
+/* ============================================================
+   纯色背景风格（用户可选，无渐变）
+   ------------------------------------------------------------
+   选中纯色底色时：隐藏流动光斑层与网格，背景/侧栏用实色。
+   每种底色绑定自身明暗（由 store 自动切 mode），这里按
+   data-background + data-theme 双属性覆盖，确保文字对比正确。
+   ============================================================ */
+html[data-background]:not([data-background="ambient"]) .ambient {
+  display: none;
+}
+/* 珍珠白（浅） */
+html[data-background="chalk"]:not([data-theme="dark"]) {
+  --stage: #f5f4f1; --rail-bg: #efede8; --canvas: #fbfaf8;
+}
+/* 暖灰（浅） */
+html[data-background="linen"]:not([data-theme="dark"]) {
+  --stage: #e9e6df; --rail-bg: #e2ded5; --canvas: #f2efe9;
+}
+/* 石墨黑（深） */
+html[data-background="graphite"][data-theme="dark"] {
+  --stage: #1c1b19; --rail-bg: #151412; --canvas: #232220;
+}
+/* 墨蓝（深） */
+html[data-background="inkblue"][data-theme="dark"] {
+  --stage: #101a2e; --rail-bg: #0a1322; --canvas: #162139;
 }

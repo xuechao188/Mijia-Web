@@ -258,6 +258,31 @@ export function spin(el: Element | null, on: boolean): void {
   }))
 }
 
+/* ── 停摆：控制中四周彩色描边环 ─────────────────────────────────
+ * conic-gradient 的起点角 --ang 由 GSAP 连续补间（CSS 自定义属性注册在
+ * tokens.css 的 @property --ang）。与 spin() 一样走 WeakMap，结束即清理；
+ * motionOff 时停在静态起始角 —— 描边仍在（色彩提示不丢），只是不转。 */
+const spinningEdge = new WeakMap<Element, Tween>()
+
+export function spinEdge(el: Element | null, on: boolean): void {
+  if (!el) return
+  const cur = spinningEdge.get(el)
+  if (!on) {
+    if (cur) {
+      cur.kill()
+      spinningEdge.delete(el)
+      ;(el as HTMLElement).style.removeProperty('--ang')
+    }
+    return
+  }
+  if (motionOff() || (cur && cur.isActive())) return
+  const node = el as HTMLElement
+  node.style.setProperty('--ang', '0deg')
+  spinningEdge.set(el, gsap.to(node, {
+    '--ang': '360deg', duration: 1.25, repeat: -1, ease: 'none',
+  }))
+}
+
 /* ── 停摆：等结果时才呼吸，拿到结果立刻停 ─────────────────────── */
 const breathing = new WeakMap<Element, Tween>()
 

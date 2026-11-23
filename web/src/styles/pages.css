@@ -272,10 +272,14 @@ html[data-theme="dark"] .lp-cat-photo {
    类型分组的格数由 --stat-cols 决定（空组不占位），在线率格恒加宽。 */
 .stat-strip {
   display: grid;
-  grid-template-columns: repeat(var(--stat-cols, 3), minmax(88px, 1fr)) minmax(176px, 1.4fr);
+  grid-template-columns: repeat(var(--stat-cols, 3), minmax(88px, 1fr)) minmax(200px, 1.5fr);
   margin-bottom: 16px;
-  border: 1px solid var(--line); border-radius: var(--r-md);
+  border: 1px solid var(--card-line); border-radius: var(--r-md);
   overflow: hidden;
+  background: var(--card-bg);
+  -webkit-backdrop-filter: blur(var(--card-blur)) saturate(var(--card-sat));
+  backdrop-filter: blur(var(--card-blur)) saturate(var(--card-sat));
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--e-color-1);
   font-size: 12px; color: var(--ink-soft);
 }
 .stat-cell {
@@ -311,7 +315,11 @@ html[data-theme="dark"] .lp-cat-photo {
 .stat-cell.is-sel .stat-sub { color: var(--blue); opacity: .72; }
 
 /* 强调色只落在「开 N」这一个真值上（.stat-sub.hot），其余走中性色阶 */
-.stat-cell.is-rate { min-width: 176px; }
+.stat-cell.is-rate {
+  min-width: 200px;
+  flex-direction: row; align-items: center; gap: 12px;
+  padding-left: 18px;
+}
 
 /* 筛选说明条：格子的高亮不解释「怎么回去」，这里补一句并给出口 */
 .stat-filter {
@@ -331,19 +339,11 @@ html[data-theme="dark"] .lp-cat-photo {
 }
 .sf-clear:hover { color: var(--ink); background: var(--hover-bg); }
 .sf-clear:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.stat-rate { display: flex; align-items: center; gap: 10px; }
-.stat-v.sm { font-size: 15px; }
+.stat-rate { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat-v.sm { font-size: 16px; }
 .stat-u {
-  font-style: normal; margin-left: 1px;
+  font-style: normal; margin-left: 4px;
   font-size: 11px; font-weight: 400; color: var(--ink-soft);
-}
-.stat-track {
-  flex: 1 1 auto; min-width: 32px; max-width: 120px; height: 3px;
-  border-radius: 2px; background: var(--groove-bg); overflow: hidden;
-}
-.stat-bar {
-  display: block; height: 100%; background: var(--blue);
-  transition: width var(--t-slow) var(--ease);
 }
 
 /* 深色态：图标底色是中性台阶，不与主色预设叠加 */
@@ -353,28 +353,25 @@ html[data-theme="dark"] .lp-cat-photo {
 :root[data-theme="dark"] .device-card.on .dc-icon { background: var(--blue-soft); }
 
 @media (max-width: 760px) {
-  /* 窄屏不拆两列：计数格仍排成一行（列数跟着分组走），只有在线率落到第二行。
-     拆两列会让「设备 63」和「在线 54」各占半行，六格读起来像三个不相干的表。 */
-  .stat-strip { grid-template-columns: repeat(var(--stat-cols, 3), minmax(0, 1fr)); }
-  .stat-strip .stat-cell { min-width: 0; padding: 8px 10px; }
-  /* 一行放下六格全靠收字号；标签不让换行，否则格子高度会一高一低 */
-  .stat-k { font-size: 10px; white-space: nowrap; }
-  .stat-v { font-size: 17px; }
-  .stat-sub { font-size: 9px; }
+  /* 窄屏：计数格按最小宽度自适应换行——一行放不下就自然折到下一行，
+     不再靠把标签压到 9px 硬塞进一行（那样读不清）。在线率始终独占一行。 */
+  .stat-strip { grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); }
+  .stat-strip .stat-cell { min-width: 0; padding: 9px 12px; }
+  .stat-k { font-size: 11px; white-space: nowrap; }
+  .stat-v { font-size: 18px; }
+  .stat-sub { font-size: 10px; }
   .stat-strip .stat-cell.is-rate {
     grid-column: 1 / -1; min-width: 0;
     border-top: 1px solid var(--line); border-left: 0;
+    justify-content: flex-start;
   }
-  .stat-track { max-width: 320px; }
 }
 
 @media (max-width: 430px) {
-  /* 手机竖屏：六格再紧一档，仍是单行 */
-  .stat-strip .stat-cell { padding: 7px 6px; }
-  .stat-v { font-size: 16px; }
-  .stat-k { font-size: 9.5px; letter-spacing: -.2px; }
-  .stat-sub { font-size: 8.5px; }
-  .stat-cell.is-rate { padding: 7px 10px; }
+  /* 手机竖屏：字号维持可读档，只略收内边距；多出来的类型格自动换行 */
+  .stat-strip { grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); }
+  .stat-strip .stat-cell { padding: 8px 9px; }
+  .stat-strip .stat-cell.is-rate { padding: 8px 12px; }
 }
 
 /* ── ⑥ 页面层：面板页与天气卡的窄屏 / 深色差异 ───────────────────── */
@@ -398,7 +395,7 @@ html[data-theme="dark"] .lp-cat-photo {
   .wc-metrics { grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .auto-item, .wc-size, .stat-bar,
+  .auto-item, .wc-size,
   .stat-cell.is-tap, .sf-clear { transition: none; }
   /* 场景砖：位移与转圈都停，但保留颜色反馈，仍看得出按下与进行中 */
   .scene-tile, .st-ico, .st-arrow { transition: none; }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ACCENT_RE, DENSITIES, MODES, PRESETS } from '../theme/core'
+import { ACCENT_RE, BACKGROUNDS, DENSITIES, MODES, PRESETS } from '../theme/core'
 import { useThemeStore } from '../stores/theme'
 
 const theme = useThemeStore()
@@ -8,10 +8,12 @@ const pickerValue = computed({
   get: () => (ACCENT_RE.test(theme.accent) ? theme.accent : '#236de9'),
   set: (v: string) => theme.setAccent(v),
 })
+const solidBackgrounds = BACKGROUNDS.filter((b) => b.id !== 'ambient')
+const isSolid = computed(() => theme.background !== 'ambient')
 </script>
 
 <template>
-  <aside class="tp m-glass m-glass-strong">
+  <aside class="tp m-glass-menu">
     <div class="tp-head">
       <span class="section-label">外观设置</span>
       <button class="tp-reset" @click="theme.reset()">恢复默认</button>
@@ -37,6 +39,27 @@ const pickerValue = computed({
         <label class="tp-custom" :class="{ 'is-active': theme.isCustom }" title="自定义主色">
           <input v-model="pickerValue" type="color" aria-label="自定义主色">
         </label>
+      </div>
+    </div>
+
+    <div class="tp-row">
+      <span class="tp-key">背景</span>
+      <div class="tp-seg m-groove">
+        <button class="tp-seg-btn" :class="{ 'is-active': !isSolid }"
+                @click="theme.setBackground('ambient')">氛围</button>
+        <button class="tp-seg-btn" :class="{ 'is-active': isSolid }"
+                @click="theme.setBackground(isSolid ? theme.background : 'chalk')">纯色</button>
+      </div>
+    </div>
+
+    <div v-if="isSolid" class="tp-row tp-bg-row">
+      <span class="tp-key">底色</span>
+      <div class="tp-swatches">
+        <button v-for="b in solidBackgrounds" :key="b.id" class="tp-swatch"
+                :class="{ 'is-active': theme.background === b.id }"
+                :style="{ '--swatch': b.swatch }"
+                :title="b.name" :aria-label="b.name"
+                @click="theme.setBackground(b.id)"></button>
       </div>
     </div>
 
@@ -85,9 +108,9 @@ const pickerValue = computed({
   transition: color .18s, background .18s, box-shadow .18s;
 }
 .tp-seg-btn.is-active {
-  background: var(--pill-bg);
-  box-shadow: var(--e1), var(--edge);
-  color: var(--ink);
+  background: var(--blue-soft);
+  box-shadow: inset 0 0 0 1px rgb(var(--tone-rgb) / .35), var(--e-color-1);
+  color: var(--blue);
   font-weight: 600;
 }
 .tp-swatches { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
@@ -111,4 +134,7 @@ const pickerValue = computed({
 }
 .tp-custom.is-active { box-shadow: 0 0 0 2px var(--surface-solid), 0 0 0 4px var(--blue), var(--e1); }
 .tp-custom input { position: absolute; inset: -8px; width: 40px; height: 40px; opacity: 0; cursor: pointer; }
+/* 纯色底色偏浅，加一圈发丝描边保证在面板上可辨；选中态用主色双环 */
+.tp-bg-row .tp-swatch { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .16), var(--e1); }
+.tp-bg-row .tp-swatch.is-active { box-shadow: 0 0 0 2px var(--surface-solid), 0 0 0 4px var(--blue), var(--e1); }
 </style>
